@@ -116,7 +116,32 @@
         "Type": "Number",
         "Default": 24,
         "MinValue": 24,
-        "MaxValue": 168
+        "MaxValue": 8760
+      },
+      "KinesisCapacityMode": {
+        "Type": "String",
+        "Description": "Optional Kinesis capacity mode; ignored in direct mode",
+        "AllowedValues": [
+          "ON_DEMAND",
+          "PROVISIONED"
+        ],
+        "Default": "ON_DEMAND"
+      },
+      "KinesisShardCount": {
+        "Type": "Number",
+        "Default": 1,
+        "MinValue": 1,
+        "MaxValue": 200,
+        "Description": "Initial PROVISIONED shard count; ignored in ON_DEMAND and direct modes"
+      },
+      "KinesisEnhancedMonitoring": {
+        "Type": "String",
+        "Description": "Optional billable shard metrics; ignored in direct mode",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
       },
       "LambdaReservedConcurrency": {
         "Type": "Number",
@@ -494,8 +519,33 @@
         "Type": "Number",
         "Default": 24,
         "MinValue": 24,
-        "MaxValue": 168,
+        "MaxValue": 8760,
         "Description": "Kinesis replay window in hours; additional retention is billed by AWS"
+      },
+      "KinesisCapacityMode": {
+        "Type": "String",
+        "Default": "ON_DEMAND",
+        "AllowedValues": [
+          "ON_DEMAND",
+          "PROVISIONED"
+        ],
+        "Description": "Optional buffer capacity mode; ON_DEMAND is Standard, not Advantage. Ignored in direct mode."
+      },
+      "KinesisShardCount": {
+        "Type": "Number",
+        "Default": 1,
+        "MinValue": 1,
+        "MaxValue": 200,
+        "Description": "Initial shard count for PROVISIONED buffering; validate regional quotas and peak bytes/records. Ignored in ON_DEMAND and direct modes."
+      },
+      "KinesisEnhancedMonitoring": {
+        "Type": "String",
+        "Default": "false",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Description": "Enable shard-level incoming/outgoing bytes and records plus write throttling metrics; adds CloudWatch charges. Ignored in direct mode."
       },
       "IamMode": {
         "Type": "String",

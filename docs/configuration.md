@@ -1,5 +1,15 @@
 # Eventing configuration reference
 
+## Buffered delivery with selective retries
+
+Eventing provides **buffered delivery with selective retries**, not guaranteed end-to-end delivery. There is no zero-loss, exactly-once or event-ordering guarantee.
+
+- **HTTP 202 is stream acceptance.** In the published delivery path, all submitted records were acknowledged by Firehose. It does not confirm arrival in S3 or delivery to any downstream destination.
+- **Retries are bounded.** The runtime selectively retries records explicitly reported as failed; it does not resend acknowledged records in those retries. The candidate implementation permits three application submission rounds; AWS SDK retries are separate. An API/transport error or exhausted retries returns HTTP 502. A failed request may already have accepted some records; a timeout can leave the outcome unknown.
+- **Loss and duplicates remain possible.** Events that never reach ingestion, exhaust producer retries, or cannot be recovered before buffer retention expires can be lost. Client retries and uncertain write outcomes can produce duplicates. Preserve stable event IDs and deduplicate in the appropriate tenant/namespace scope. The service has no server-side deduplication store or guaranteed replay of rejected requests.
+- **Recovery needs an owner.** Persist pending events in a durable producer queue when required. Monitor ingestion errors/throttles, delivery freshness, error prefixes and actual S3 arrival; investigate failures and reconcile expected IDs against stored records. Metrics alone do not prove every event arrived.
+- **Buffering is not a delivery guarantee.** The published path is Lambda → Firehose → S3. Downstream filtering, forwarding, retries and destination acknowledgements are customer-owned.
+
 Use the [complete public configuration guide](https://eventing.bookcicle.com/configuration) for recommended settings, exact WAF controls, region routing and scaling expectations. The machine-readable [configuration reference](../reference/configuration.json) lists the coordinated root parameters, advanced regional/edge parameters, defaults, validation constraints, environment mappings, WAF rules and residency country groups.
 
 ## Deploy through AWS Marketplace
@@ -30,6 +40,10 @@ Update the existing coordinated deployment through the Marketplace offering’s 
 
 Public JSON files describe the supported customer contract. Always review the actual approved release/change set and your account policies before deployment; these references do not perform live IAM verification.
 
-## Capacity and optional durable ingestion
+## Capacity and published delivery path
 
-See the [capacity and delivery guide](scaling.md) for monthly-request planning examples, the measured internal dev baseline, auth-layer overhead, stable IDs and opt-in Kinesis buffering. `IngestionMode` defaults to `direct`; `kinesis` adds a retained encrypted buffer and separate AWS charges. Select the mode at installation creation; mode changes require a reviewed migration.
+See the [capacity and delivery guide](scaling.md) for monthly-request planning examples, the measured internal dev baseline, auth overhead and stable event IDs. The published path is Lambda → Firehose → S3.
+
+## Optional retained stream for the next release
+
+Firehose is the default (`IngestionMode=direct`). The next release candidate also supports `IngestionMode=kinesis`: Lambda → Kinesis Data Streams → Firehose → S3. It is not part of published 0.1.4. Configure retention (24–8760 hours, default 24), on-demand Standard or provisioned capacity, initial provisioned shard count and optional enhanced shard monitoring through coordinated IaC. See the [delivery options comparison](scaling.md#delivery-options) for exact parameters, additional costs, migration and recovery limits. Dedicated-account acceptance and measured cost tests are pending; retained data does not establish guaranteed delivery.
