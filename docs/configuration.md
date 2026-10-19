@@ -2,9 +2,9 @@
 
 Use the [complete public configuration guide](https://eventing.bookcicle.com/configuration) for recommended settings, exact WAF controls, region routing and scaling expectations. The machine-readable [configuration reference](../reference/configuration.json) lists the coordinated root parameters, advanced regional/edge parameters, defaults, validation constraints, environment mappings, WAF rules and residency country groups.
 
-## Deploy through approved IaC
+## Deploy through AWS Marketplace
 
-Use the immutable root template URL supplied by your subscribed product's launch configuration or by your platform team's approved release module. The examples repository is not a service installer. Your platform binds inputs and outputs in one IaC workflow; users do not run regional deployment commands or copy origin URLs.
+Subscribe through AWS Marketplace and use the product's Configure and launch flow. Marketplace supplies the versioned infrastructure package. The examples repository is not a service installer. Users do not run regional deployment commands or copy origin URLs.
 
 The root launches in us-east-1 and coordinates selected commercial EU, US and APAC regions. At least one region is required. The current guided DNS flow requires a first-party hostname and an existing public Route53 hosted zone in the same account. Keep production and non-production installations in separate accounts where possible.
 
@@ -12,7 +12,7 @@ The root launches in us-east-1 and coordinates selected commercial EU, US and AP
 
 Use `IamMode: preprovisioned` to bind existing platform-owned administration/execution, lookup, edge and regional ingestion/delivery roles, plus their expected boundary ARNs. Missing enabled-region inputs are rejected. The application stack creates no IAM roles/policies and never attaches or changes boundaries in this mode. Your platform must verify actual role trusts, identity policies and boundary attachments.
 
-Use a delegated root CloudFormation service role for approved self-service, or submit configuration through the platform team's pipeline without direct AWS deployment access. See [onboarding](onboarding.md) and [permissions boundaries](permissions-boundaries.md).
+Use a delegated root CloudFormation service role for Marketplace launch. If launch permission is not delegated, your platform team conducts the Marketplace launch on your behalf. See [onboarding](onboarding.md) and [permissions boundaries](permissions-boundaries.md).
 
 ## Recommended defaults and controls
 
@@ -26,6 +26,6 @@ Use a delegated root CloudFormation service role for approved self-service, or s
 
 ## Updates and ownership
 
-Update the coordinated root through its owning IaC workflow. Do not independently modify its managed children. Bind regional layer/key/topic ARNs from their platform resources. Treat IAM mode, installation identity and enabled-region changes as reviewed migrations. Stop producers and drain delivery buffers before removal; retained S3 objects and edge replicas require lifecycle review.
+Update the existing coordinated deployment through the Marketplace offering’s approved update workflow. Do not independently modify its managed children. Bind regional layer/key/topic ARNs from their platform resources. Treat IAM mode, installation identity and enabled-region changes as reviewed migrations. Stop producers and drain delivery buffers before removal; retained S3 objects and edge replicas require lifecycle review.
 
 Public JSON files describe the supported customer contract. Always review the actual approved release/change set and your account policies before deployment; these references do not perform live IAM verification.

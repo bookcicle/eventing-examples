@@ -50,11 +50,11 @@ unzip -l target/layers/event-auth-demo.zip
 
 The ZIP contains an executable `bin/event-auth` with mode 0755. The packager checks the binary is ELF64 ARM64, rejects an x86 binary, and includes no development private keys. For CI, preserve the checked-in Cargo lockfile and pin the Rust/Zig toolchain versions used by your build image.
 
-## Attach through your IaC workflow
+## Publish your layer and configure Marketplace launch
 
-Customers launch Eventing through [guided onboarding](onboarding.md), or consume the same root template in their existing infrastructure pipeline. The local build commands above create a developer artifact; they are not the buyer provisioning flow.
+Customers launch Eventing through AWS Marketplace using [guided onboarding](onboarding.md). The local build commands above create a developer artifact; they are not the buyer provisioning flow.
 
-Declare the custom layer as `AWS::Lambda::LayerVersion` (or the equivalent CDK/Terraform resource) in your application's regional infrastructure. Bind the layer ZIP asset through that pipeline, use `arm64` and `provided.al2023`, and pass the resulting immutable version ARN automatically into the coordinated Eventing root parameters:
+Declare the custom layer as `AWS::Lambda::LayerVersion` (or the equivalent CDK/Terraform resource) in your application's regional infrastructure. Bind the layer ZIP asset through that pipeline, use `arm64` and `provided.al2023`, and supply the resulting immutable version ARN in the Marketplace deployment settings:
 
 ```json
 {
