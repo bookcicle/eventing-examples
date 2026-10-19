@@ -1,0 +1,902 @@
+{
+  "schemaVersion": 1,
+  "parameters": {
+    "coordinated": {
+      "DeploymentId": {
+        "Type": "String",
+        "Description": "Unique Eventing deployment identifier",
+        "MinLength": 3,
+        "MaxLength": 30,
+        "AllowedPattern": "[a-z0-9][a-z0-9-]*"
+      },
+      "Stage": {
+        "Type": "String",
+        "Description": "Environment; separate accounts are recommended for production",
+        "AllowedValues": [
+          "dev",
+          "prod"
+        ],
+        "Default": "prod"
+      },
+      "CustomDomainName": {
+        "Type": "String",
+        "Description": "First-party events hostname in the Route53 zone below",
+        "MinLength": 4
+      },
+      "HostedZoneId": {
+        "Type": "String",
+        "Description": "Existing public Route53 hosted zone in this account for automatic certificate validation and DNS",
+        "AllowedPattern": "Z[A-Z0-9]+"
+      },
+      "AllowedCorsOrigins": {
+        "Type": "String",
+        "Description": "Exact browser origins; server-only deployments may leave empty",
+        "Default": ""
+      },
+      "ResidencyMode": {
+        "Type": "String",
+        "Description": "Reject unmapped country groups unless fallback is explicitly authorized",
+        "AllowedValues": [
+          "fail_closed",
+          "default_fallback"
+        ],
+        "Default": "fail_closed"
+      },
+      "GeoData": {
+        "Type": "String",
+        "Description": "Persist coarse geographic enrichment",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "true"
+      },
+      "CaptureIp": {
+        "Type": "String",
+        "Description": "Persist raw source IP",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
+      },
+      "AllowCookies": {
+        "Type": "String",
+        "Description": "Forward cookies and permit credentialed browser CORS",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
+      },
+      "AllowedNamespaces": {
+        "Type": "String",
+        "Description": "Low-cardinality namespace allowlist",
+        "Default": "general,claims,security,billing"
+      },
+      "DefaultNamespace": {
+        "Type": "String",
+        "Description": "Namespace when omitted",
+        "AllowedPattern": "[a-z0-9][a-z0-9_-]{0,63}",
+        "Default": "general"
+      },
+      "AnonymousAllowedNamespaces": {
+        "Type": "String",
+        "Description": "Namespaces allowed without authentication",
+        "Default": "general"
+      },
+      "EnforcePluginNamespaceAuth": {
+        "Type": "String",
+        "Description": "Apply auth layer namespace grants",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "true"
+      },
+      "PartitioningMode": {
+        "Type": "String",
+        "Description": "Event storage partitioning",
+        "AllowedValues": [
+          "FIREHOSE_DYNAMIC",
+          "STATIC_DATE"
+        ],
+        "Default": "FIREHOSE_DYNAMIC"
+      },
+      "LambdaReservedConcurrency": {
+        "Type": "Number",
+        "Default": 100,
+        "MinValue": 1,
+        "MaxValue": 1000
+      },
+      "WafRateLimitPer5Min": {
+        "Type": "Number",
+        "Default": 5000,
+        "MinValue": 100,
+        "MaxValue": 2000000
+      },
+      "RetentionDays": {
+        "Type": "Number",
+        "Default": 365,
+        "MinValue": 1,
+        "MaxValue": 3650
+      },
+      "LogRetentionDays": {
+        "Type": "Number",
+        "Default": 30,
+        "AllowedValues": [
+          7,
+          14,
+          30,
+          60,
+          90,
+          180,
+          365
+        ]
+      },
+      "EdgeRouterPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Existing customer edge boundary; empty uses the default",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "DeploymentPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Optional customer boundary for the StackSet execution role; must permit the documented deployment operations",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "EURegion": {
+        "Type": "String",
+        "Description": "Region for the EU country group; empty disables it",
+        "AllowedValues": [
+          "",
+          "eu-west-1",
+          "eu-central-1"
+        ],
+        "Default": "eu-west-1"
+      },
+      "EUKmsKeyArn": {
+        "Type": "String",
+        "Description": "Regional customer KMS key for EU; optional",
+        "Default": ""
+      },
+      "EUAuthPluginLayerArn": {
+        "Type": "String",
+        "Description": "Immutable regional auth layer ARN; empty disables auth for EU; optional",
+        "Default": ""
+      },
+      "EUAlarmTopicArn": {
+        "Type": "String",
+        "Description": "Regional SNS alarm topic for EU; optional",
+        "Default": ""
+      },
+      "EULambdaPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer ingestion boundary for EU; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "EUFirehosePermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer delivery boundary for EU; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "USRegion": {
+        "Type": "String",
+        "Description": "Region for the US country group; empty disables it",
+        "AllowedValues": [
+          "",
+          "us-east-1",
+          "us-west-2"
+        ],
+        "Default": ""
+      },
+      "USKmsKeyArn": {
+        "Type": "String",
+        "Description": "Regional customer KMS key for US; optional",
+        "Default": ""
+      },
+      "USAuthPluginLayerArn": {
+        "Type": "String",
+        "Description": "Immutable regional auth layer ARN; empty disables auth for US; optional",
+        "Default": ""
+      },
+      "USAlarmTopicArn": {
+        "Type": "String",
+        "Description": "Regional SNS alarm topic for US; optional",
+        "Default": ""
+      },
+      "USLambdaPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer ingestion boundary for US; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "USFirehosePermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer delivery boundary for US; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "APACRegion": {
+        "Type": "String",
+        "Description": "Region for the APAC country group; empty disables it",
+        "AllowedValues": [
+          "",
+          "ap-southeast-1",
+          "ap-southeast-2",
+          "ap-northeast-1"
+        ],
+        "Default": ""
+      },
+      "APACKmsKeyArn": {
+        "Type": "String",
+        "Description": "Regional customer KMS key for APAC; optional",
+        "Default": ""
+      },
+      "APACAuthPluginLayerArn": {
+        "Type": "String",
+        "Description": "Immutable regional auth layer ARN; empty disables auth for APAC; optional",
+        "Default": ""
+      },
+      "APACAlarmTopicArn": {
+        "Type": "String",
+        "Description": "Regional SNS alarm topic for APAC; optional",
+        "Default": ""
+      },
+      "APACLambdaPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer ingestion boundary for APAC; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "APACFirehosePermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer delivery boundary for APAC; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "AuthPluginPassClientMetadata": {
+        "Type": "String",
+        "Description": "Pass ephemeral client metadata to the regional auth plugin",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
+      },
+      "AdministrationPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Optional customer boundary for the StackSet administration role; empty creates its scoped default",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "LookupPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Optional customer boundary for the read-only regional output lookup role; empty creates its scoped default",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "IamMode": {
+        "Type": "String",
+        "Description": "managed creates scoped IAM roles; preprovisioned uses platform-owned roles and never modifies IAM",
+        "AllowedValues": [
+          "managed",
+          "preprovisioned"
+        ],
+        "Default": "managed"
+      },
+      "AdministrationRoleArn": {
+        "Type": "String",
+        "Description": "Existing same-account platform role; required in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "LookupRoleArn": {
+        "Type": "String",
+        "Description": "Existing same-account platform role; required in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "EdgeRouterRoleArn": {
+        "Type": "String",
+        "Description": "Existing same-account platform role; required in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "ExecutionRoleName": {
+        "Type": "String",
+        "Description": "Existing same-account StackSet execution role name (no path); required in preprovisioned mode",
+        "MaxLength": 64,
+        "AllowedPattern": "[A-Za-z0-9+=,.@_-]*",
+        "Default": ""
+      },
+      "EULambdaRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned LambdaRoleArn for EU; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "EUFirehoseRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned FirehoseRoleArn for EU; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "USLambdaRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned LambdaRoleArn for US; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "USFirehoseRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned FirehoseRoleArn for US; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "APACLambdaRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned LambdaRoleArn for APAC; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "APACFirehoseRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned FirehoseRoleArn for APAC; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      }
+    },
+    "global": {
+      "IamMode": {
+        "Type": "String",
+        "Default": "managed",
+        "AllowedValues": [
+          "managed",
+          "preprovisioned"
+        ],
+        "Description": "managed creates IAM resources; preprovisioned uses platform-owned roles without creating or changing IAM"
+      },
+      "EdgeRouterRoleArn": {
+        "Type": "String",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Description": "Existing same-account platform role with its policies and boundary already attached; required in preprovisioned mode"
+      },
+      "EdgeRouterPermissionsBoundaryArn": {
+        "Type": "String",
+        "Default": "",
+        "Description": "Optional existing customer-managed IAM policy ARN in this account for the Lambda@Edge router permissions boundary; empty creates a role-specific stack boundary.",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Must be empty or a customer-managed IAM policy ARN (including any policy path)."
+      },
+      "DeploymentId": {
+        "Type": "String",
+        "Description": "Unique identifier for this customer deployment (e.g. ev-prod-acme)",
+        "MinLength": 3,
+        "MaxLength": 36,
+        "AllowedPattern": "[a-z0-9][a-z0-9-]*"
+      },
+      "CustomDomainName": {
+        "Type": "String",
+        "Description": "Customer-owned first-party events domain (e.g. events.customer.com)",
+        "MinLength": 4
+      },
+      "HostedZoneId": {
+        "Type": "String",
+        "Description": "Optional Route53 HostedZoneId in buyer account for automatic ACM DNS validation and alias creation (leave empty for external DNS)",
+        "Default": ""
+      },
+      "RouterConfigurationVersion": {
+        "Type": "String",
+        "Default": "",
+        "MaxLength": 64,
+        "Description": "Routing configuration fingerprint; coordinated deployment computes it automatically",
+        "AllowedPattern": "[A-Za-z0-9._-]*"
+      },
+      "ReleaseVersion": {
+        "Type": "String",
+        "Default": "development",
+        "MaxLength": 64,
+        "Description": "Immutable release identifier; changing it publishes a new edge version",
+        "AllowedPattern": "[A-Za-z0-9._-]+"
+      },
+      "DefaultRegion": {
+        "Type": "String",
+        "Description": "Default regional origin when residency policy permits",
+        "Default": "eu-west-1"
+      },
+      "ResidencyMode": {
+        "Type": "String",
+        "Description": "Regional routing enforcement policy (fail_closed rejects unmapped/unavailable regions)",
+        "AllowedValues": [
+          "fail_closed",
+          "default_fallback"
+        ],
+        "Default": "fail_closed"
+      },
+      "PrimaryRegionalOriginDomain": {
+        "Type": "String",
+        "Description": "Regional Lambda Function URL domain name for the primary region (e.g. xxx.lambda-url.eu-west-1.on.aws)",
+        "MinLength": 10
+      },
+      "EuOriginDomain": {
+        "Type": "String",
+        "Description": "Optional EU regional Function URL domain name (e.g. xxx.lambda-url.eu-west-1.on.aws)",
+        "Default": ""
+      },
+      "UsOriginDomain": {
+        "Type": "String",
+        "Description": "Optional US regional Function URL domain name (e.g. xxx.lambda-url.us-east-1.on.aws)",
+        "Default": ""
+      },
+      "ApacOriginDomain": {
+        "Type": "String",
+        "Description": "Optional APAC regional Function URL domain name (e.g. xxx.lambda-url.ap-southeast-1.on.aws)",
+        "Default": ""
+      },
+      "AllowCookies": {
+        "Type": "String",
+        "Description": "Forward cookies through CloudFront to the regional ingestion origin",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
+      },
+      "WafRateLimitPer5Min": {
+        "Type": "Number",
+        "Description": "Maximum requests per 5-minute window per source IP at the WAF edge",
+        "Default": 5000,
+        "MinValue": 100,
+        "MaxValue": 2000000
+      }
+    },
+    "regional": {
+      "IamMode": {
+        "Type": "String",
+        "Default": "managed",
+        "AllowedValues": [
+          "managed",
+          "preprovisioned"
+        ],
+        "Description": "managed creates IAM resources; preprovisioned uses platform-owned roles without creating or changing IAM"
+      },
+      "LambdaRoleArn": {
+        "Type": "String",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Description": "Existing same-account platform role with its policies and boundary already attached; required in preprovisioned mode"
+      },
+      "FirehoseRoleArn": {
+        "Type": "String",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Description": "Existing same-account platform role with its policies and boundary already attached; required in preprovisioned mode"
+      },
+      "FirehosePermissionsBoundaryArn": {
+        "Type": "String",
+        "Default": "",
+        "Description": "Optional existing customer-managed IAM policy ARN in this account for the Firehose delivery permissions boundary; empty creates a role-specific stack boundary.",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Must be empty or a customer-managed IAM policy ARN (including any policy path)."
+      },
+      "LambdaPermissionsBoundaryArn": {
+        "Type": "String",
+        "Default": "",
+        "Description": "Optional existing customer-managed IAM policy ARN in this account for the Ingestion Lambda permissions boundary; empty creates a role-specific stack boundary.",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Must be empty or a customer-managed IAM policy ARN (including any policy path)."
+      },
+      "DeploymentId": {
+        "Type": "String",
+        "Description": "Unique identifier for this customer deployment (e.g. ev-prod-acme)",
+        "MinLength": 3,
+        "MaxLength": 36,
+        "AllowedPattern": "[a-z0-9][a-z0-9-]*"
+      },
+      "IamNamePrefix": {
+        "Type": "String",
+        "Default": "",
+        "MaxLength": 55,
+        "AllowedPattern": "^$|^[a-z0-9][a-z0-9-]*$",
+        "Description": "Coordinated deployment name prefix; leave empty to preserve generated names on independently managed stacks"
+      },
+      "Stage": {
+        "Type": "String",
+        "Description": "Deployment stage label",
+        "AllowedValues": [
+          "dev",
+          "prod"
+        ],
+        "Default": "prod"
+      },
+      "EventsBucketName": {
+        "Type": "String",
+        "Description": "Optional customer-owned S3 bucket name; empty lets CloudFormation generate a globally unique name",
+        "Default": "",
+        "MinLength": 0,
+        "MaxLength": 63,
+        "AllowedPattern": "^$|^[a-z0-9][a-z0-9.-]*[a-z0-9]$"
+      },
+      "GeoData": {
+        "Type": "String",
+        "Description": "Persist coarse country/region derived from trusted CloudFront viewer headers",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "true"
+      },
+      "CaptureIp": {
+        "Type": "String",
+        "Description": "Persist raw client source_ip in stored S3 event records",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
+      },
+      "PartitioningMode": {
+        "Type": "String",
+        "Description": "S3 partitioning mode (FIREHOSE_DYNAMIC extracts namespace; STATIC_DATE uses static time prefix)",
+        "AllowedValues": [
+          "FIREHOSE_DYNAMIC",
+          "STATIC_DATE"
+        ],
+        "Default": "FIREHOSE_DYNAMIC"
+      },
+      "AllowedNamespaces": {
+        "Type": "String",
+        "Description": "Comma-separated low-cardinality allowlist of valid S3 partition namespaces (max 32)",
+        "Default": "general,claims,security,billing"
+      },
+      "DefaultNamespace": {
+        "Type": "String",
+        "Description": "Fallback namespace when event omits context.namespace",
+        "Default": "general",
+        "AllowedPattern": "[a-z0-9][a-z0-9_-]{0,63}"
+      },
+      "AnonymousAllowedNamespaces": {
+        "Type": "String",
+        "Description": "Comma-separated namespaces permitted when request authentication_status is anonymous",
+        "Default": "general"
+      },
+      "EnforcePluginNamespaceAuth": {
+        "Type": "String",
+        "Description": "Enforce that authenticated requests only write to namespaces returned in plugin allowed_namespaces",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "true"
+      },
+      "AuthPluginEnabled": {
+        "Type": "String",
+        "Description": "Enable invocation of /opt/bin/event-auth from the customer Lambda Layer",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
+      },
+      "AuthPluginLayerArn": {
+        "Type": "String",
+        "Description": "Optional immutable ARN of customer-owned Lambda Layer version providing /opt/bin/event-auth (arm64)",
+        "Default": ""
+      },
+      "AuthPluginPassClientMetadata": {
+        "Type": "String",
+        "Description": "Pass ephemeral source_ip and coarse geo to /opt/bin/event-auth stdin for access policy evaluation",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
+      },
+      "AllowedCorsOrigins": {
+        "Type": "String",
+        "Description": "Comma-separated exact HTTPS origins permitted for browser CORS requests (no wildcard with cookies)",
+        "Default": ""
+      },
+      "AllowCookies": {
+        "Type": "String",
+        "Description": "Forward Cookie header to auth plugin and enable Access-Control-Allow-Credentials",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "false"
+      },
+      "CloudFrontDistributionId": {
+        "Type": "String",
+        "Description": "Buyer-account CloudFront Distribution ID permitted to invoke the private Lambda Function URL via OAC",
+        "Default": "",
+        "AllowedPattern": "^$|^[A-Z0-9]+$"
+      },
+      "LambdaArtifactBucket": {
+        "Type": "String",
+        "Description": "Regional S3 bucket containing the signed Eventing Rust Lambda bootstrap zip artifact",
+        "MinLength": 3
+      },
+      "LambdaArtifactObjectVersion": {
+        "Type": "String",
+        "Default": "",
+        "Description": "Optional immutable artifact S3 version ID; coordinated releases always pin it"
+      },
+      "LambdaArtifactKey": {
+        "Type": "String",
+        "Description": "S3 object key for the signed Eventing Rust Lambda bootstrap zip artifact",
+        "MinLength": 1
+      },
+      "LambdaReservedConcurrency": {
+        "Type": "Number",
+        "Description": "Reserved concurrent executions for the regional ingestion Lambda",
+        "Default": 100,
+        "MinValue": 1,
+        "MaxValue": 1000
+      },
+      "RetentionDays": {
+        "Type": "Number",
+        "Description": "S3 lifecycle retention period in days for raw event objects",
+        "Default": 365,
+        "MinValue": 1,
+        "MaxValue": 3650
+      },
+      "KmsKeyArn": {
+        "Type": "String",
+        "Description": "Optional customer-managed KMS Key ARN for S3 and Firehose encryption (leave empty for SSE-S3 AES256)",
+        "Default": ""
+      },
+      "LogRetentionDays": {
+        "Type": "Number",
+        "Description": "CloudWatch Logs retention in days for ingestion and Firehose logs",
+        "AllowedValues": [
+          7,
+          14,
+          30,
+          60,
+          90,
+          180,
+          365
+        ],
+        "Default": 30
+      },
+      "AlarmTopicArn": {
+        "Type": "String",
+        "Description": "Optional SNS Topic ARN for CloudWatch delivery and error alarms",
+        "Default": ""
+      }
+    }
+  },
+  "environment": {
+    "STAGE": {
+      "Ref": "Stage"
+    },
+    "SOURCE_REGION": {
+      "Ref": "AWS::Region"
+    },
+    "EVENTS_FIREHOSE_STREAM_NAME": {
+      "Ref": "EventsDeliveryStream"
+    },
+    "GEO_DATA": {
+      "Ref": "GeoData"
+    },
+    "CAPTURE_IP": {
+      "Ref": "CaptureIp"
+    },
+    "PARTITIONING_MODE": {
+      "Ref": "PartitioningMode"
+    },
+    "ALLOWED_NAMESPACES": {
+      "Ref": "AllowedNamespaces"
+    },
+    "DEFAULT_NAMESPACE": {
+      "Ref": "DefaultNamespace"
+    },
+    "ANONYMOUS_ALLOWED_NAMESPACES": {
+      "Ref": "AnonymousAllowedNamespaces"
+    },
+    "ENFORCE_PLUGIN_NAMESPACE_AUTH": {
+      "Ref": "EnforcePluginNamespaceAuth"
+    },
+    "AUTH_PLUGIN_ENABLED": {
+      "Ref": "AuthPluginEnabled"
+    },
+    "AUTH_PLUGIN_PASS_CLIENT_METADATA": {
+      "Ref": "AuthPluginPassClientMetadata"
+    },
+    "ALLOWED_ORIGINS": {
+      "Ref": "AllowedCorsOrigins"
+    },
+    "ALLOW_COOKIES": {
+      "Ref": "AllowCookies"
+    }
+  },
+  "waf": {
+    "Name": {
+      "Fn::Sub": "${DeploymentId}-global-waf"
+    },
+    "Scope": "CLOUDFRONT",
+    "DefaultAction": {
+      "Allow": {}
+    },
+    "VisibilityConfig": {
+      "SampledRequestsEnabled": true,
+      "CloudWatchMetricsEnabled": true,
+      "MetricName": {
+        "Fn::Sub": "${DeploymentId}GlobalWaf"
+      }
+    },
+    "Rules": [
+      {
+        "Name": "RateLimitPerSourceIp",
+        "Priority": 1,
+        "Action": {
+          "Block": {}
+        },
+        "Statement": {
+          "RateBasedStatement": {
+            "Limit": {
+              "Ref": "WafRateLimitPer5Min"
+            },
+            "AggregateKeyType": "IP"
+          }
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": true,
+          "CloudWatchMetricsEnabled": true,
+          "MetricName": {
+            "Fn::Sub": "${DeploymentId}RateLimit"
+          }
+        }
+      },
+      {
+        "Name": "MaxBodySize1MiB",
+        "Priority": 2,
+        "Action": {
+          "Block": {}
+        },
+        "Statement": {
+          "SizeConstraintStatement": {
+            "FieldToMatch": {
+              "Body": {
+                "OversizeHandling": "MATCH"
+              }
+            },
+            "ComparisonOperator": "GT",
+            "Size": 1048576,
+            "TextTransformations": [
+              {
+                "Priority": 0,
+                "Type": "NONE"
+              }
+            ]
+          }
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": true,
+          "CloudWatchMetricsEnabled": true,
+          "MetricName": {
+            "Fn::Sub": "${DeploymentId}MaxBodySize"
+          }
+        }
+      },
+      {
+        "Name": "AWSManagedRulesKnownBadInputs",
+        "Priority": 3,
+        "OverrideAction": {
+          "None": {}
+        },
+        "Statement": {
+          "ManagedRuleGroupStatement": {
+            "VendorName": "AWS",
+            "Name": "AWSManagedRulesKnownBadInputsRuleSet"
+          }
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": true,
+          "CloudWatchMetricsEnabled": true,
+          "MetricName": {
+            "Fn::Sub": "${DeploymentId}KnownBadInputs"
+          }
+        }
+      },
+      {
+        "Name": "AWSManagedRulesCommonRuleSet",
+        "Priority": 4,
+        "OverrideAction": {
+          "None": {}
+        },
+        "Statement": {
+          "ManagedRuleGroupStatement": {
+            "VendorName": "AWS",
+            "Name": "AWSManagedRulesCommonRuleSet"
+          }
+        },
+        "VisibilityConfig": {
+          "SampledRequestsEnabled": true,
+          "CloudWatchMetricsEnabled": true,
+          "MetricName": {
+            "Fn::Sub": "${DeploymentId}CommonRules"
+          }
+        }
+      }
+    ]
+  },
+  "routingGroups": {
+    "EU": [
+      "AT",
+      "BE",
+      "BG",
+      "CY",
+      "CZ",
+      "DE",
+      "DK",
+      "EE",
+      "ES",
+      "FI",
+      "FR",
+      "GR",
+      "HR",
+      "HU",
+      "IE",
+      "IS",
+      "IT",
+      "LI",
+      "LT",
+      "LU",
+      "LV",
+      "MT",
+      "NL",
+      "NO",
+      "PL",
+      "PT",
+      "RO",
+      "SE",
+      "SI",
+      "SK",
+      "GB",
+      "UK",
+      "CH"
+    ],
+    "APAC": [
+      "AU",
+      "NZ",
+      "SG",
+      "JP",
+      "KR",
+      "IN",
+      "ID",
+      "MY",
+      "PH",
+      "TH",
+      "VN",
+      "TW",
+      "HK"
+    ],
+    "US": [
+      "US",
+      "CA",
+      "MX",
+      "BR",
+      "AR",
+      "CL",
+      "CO",
+      "PE"
+    ]
+  }
+}

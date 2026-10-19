@@ -1,0 +1,18 @@
+{
+  "name": "@bookcicle/eventing-sdk",
+  "version": "1.0.0",
+  "description": "Privacy-safe, zero-dependency JavaScript SDK for Eventing by Bookcicle",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./payloadHash": "./src/payloadHash.js"
+  },
+  "files": [
+    "src/"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,6 @@
+/target/
+__pycache__/
+*.pyc
+crates/event-auth-jwt/tests/fixtures/*.der
+crates/event-auth-jwt/tests/fixtures/jwks.json
+.env

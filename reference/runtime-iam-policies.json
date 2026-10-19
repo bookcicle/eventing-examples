@@ -1,0 +1,156 @@
+{
+  "LambdaExecutionRole": {
+    "AssumeRolePolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "Service": "lambda.amazonaws.com"
+          },
+          "Action": "sts:AssumeRole"
+        }
+      ]
+    },
+    "Policies": [
+      {
+        "PolicyName": "eventing-lambda-least-privilege",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": {
+                "Fn::GetAtt": "EventsIngestLogGroup.Arn"
+              }
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "firehose:PutRecordBatch"
+              ],
+              "Resource": {
+                "Fn::GetAtt": "EventsDeliveryStream.Arn"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "FirehoseDeliveryRole": {
+    "AssumeRolePolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "Service": "firehose.amazonaws.com"
+          },
+          "Action": "sts:AssumeRole"
+        }
+      ]
+    },
+    "Policies": [
+      {
+        "PolicyName": "eventing-firehose-s3-delivery",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:AbortMultipartUpload",
+                "s3:GetBucketLocation",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:ListBucketMultipartUploads",
+                "s3:PutObject"
+              ],
+              "Resource": [
+                {
+                  "Fn::GetAtt": "CustomerEventsBucket.Arn"
+                },
+                {
+                  "Fn::Sub": "${CustomerEventsBucket.Arn}/*"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "HasCustomKmsKey",
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "kms:Encrypt",
+                    "kms:Decrypt",
+                    "kms:GenerateDataKey"
+                  ],
+                  "Resource": {
+                    "Ref": "KmsKeyArn"
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "EdgeRouterRole": {
+    "AssumeRolePolicyDocument": {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "Service": [
+              "lambda.amazonaws.com",
+              "edgelambda.amazonaws.com"
+            ]
+          },
+          "Action": "sts:AssumeRole"
+        }
+      ]
+    },
+    "Policies": [
+      {
+        "PolicyName": "eventing-edge-router-logs",
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": [
+                {
+                  "Fn::Sub": "arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/us-east-1.${DeploymentId}-edge-router"
+                },
+                {
+                  "Fn::Sub": "arn:${AWS::Partition}:logs:*:${AWS::AccountId}:log-group:/aws/lambda/us-east-1.${DeploymentId}-edge-router:*"
+                },
+                {
+                  "Fn::Sub": "arn:${AWS::Partition}:logs:us-east-1:${AWS::AccountId}:log-group:/aws/lambda/${DeploymentId}-edge-router"
+                },
+                {
+                  "Fn::Sub": "arn:${AWS::Partition}:logs:us-east-1:${AWS::AccountId}:log-group:/aws/lambda/${DeploymentId}-edge-router:*"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

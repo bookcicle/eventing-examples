@@ -1,0 +1,20 @@
+name: Public examples
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with: {python-version: "3.13"}
+      - uses: actions/setup-node@v6
+        with: {node-version: "24"}
+      - uses: dtolnay/rust-toolchain@1.96.0
+      - run: python3 scripts/generate-test-keys.py
+      - run: cargo test --locked --workspace
+      - run: cargo build --locked --workspace
+      - run: python3 scripts/test-auth-reference.py
+      - run: python3 scripts/test-producers.py
+      - run: node --test sdk/js/test/*.test.mjs

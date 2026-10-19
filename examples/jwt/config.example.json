@@ -1,0 +1,10 @@
+{
+  "issuer": "https://identity.example.com/",
+  "audience": "https://events.example.com",
+  "jwks_file": "jwks.json",
+  "anonymous_namespaces": ["general"],
+  "tenant_namespaces": {
+    "claims": ["general", "claims"],
+    "security": ["general", "security"]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "schema_version": "1",
+  "batch_id": "4d56bfd2-4659-4f0c-8442-18c20ccf2001",
+  "events": [
+    {"event_id": "4d56bfd2-4659-4f0c-8442-18c20ccf2002", "name": "example_started", "event_time": "2026-10-19T10:30:00Z", "context": {"namespace": "general"}, "properties": {"runtime": "example"}},
+    {"event_id": "4d56bfd2-4659-4f0c-8442-18c20ccf2003", "name": "example_completed", "event_time": "2026-10-19T10:30:01Z", "context": {"namespace": "general"}, "properties": {"runtime": "example", "count": 1}}
+  ]
+}

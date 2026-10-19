@@ -1,0 +1,13 @@
+{
+  "contract_version": "1",
+  "decision": "authenticated",
+  "context": {
+    "subject": "employee_123",
+    "tenant": "claims",
+    "email": "adjuster@customer.example"
+  },
+  "allowed_namespaces": [
+    "general",
+    "claims"
+  ]
+}
