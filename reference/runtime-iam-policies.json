@@ -19,6 +19,34 @@
           "Version": "2012-10-17",
           "Statement": [
             {
+              "Sid": "AllowOwnLambdaEnvironmentDecrypt",
+              "Effect": "Allow",
+              "Action": "kms:Decrypt",
+              "Resource": {
+                "Fn::Sub": "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "kms:CallerAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ForAnyValue:StringEquals": {
+                  "kms:ResourceAliases": "alias/aws/lambda"
+                },
+                "StringLike": {
+                  "kms:EncryptionContext:aws:lambda:FunctionArn": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${DeploymentId}-${Stage}-ingest"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${DeploymentId}-${Stage}-ingest:*"
+                    }
+                  ]
+                }
+              }
+            },
+            {
               "Effect": "Allow",
               "Action": [
                 "logs:CreateLogStream",
@@ -126,6 +154,40 @@
         "PolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
+            {
+              "Sid": "AllowOwnLambdaEnvironmentDecrypt",
+              "Effect": "Allow",
+              "Action": "kms:Decrypt",
+              "Resource": {
+                "Fn::Sub": "arn:${AWS::Partition}:kms:*:${AWS::AccountId}:key/*"
+              },
+              "Condition": {
+                "StringEquals": {
+                  "kms:CallerAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ForAnyValue:StringEquals": {
+                  "kms:ResourceAliases": "alias/aws/lambda"
+                },
+                "StringLike": {
+                  "kms:EncryptionContext:aws:lambda:FunctionArn": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${DeploymentId}-edge-router"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:${DeploymentId}-edge-router:*"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:us-east-1.${DeploymentId}-edge-router"
+                    },
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:lambda:*:${AWS::AccountId}:function:us-east-1.${DeploymentId}-edge-router:*"
+                    }
+                  ]
+                }
+              }
+            },
             {
               "Effect": "Allow",
               "Action": [

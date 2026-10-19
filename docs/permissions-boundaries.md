@@ -4,9 +4,9 @@ In `IamMode: managed` (the default), both deployment templates attach a permissi
 
 | Stack / role | Default ceiling | Customer-managed override |
 | --- | --- | --- |
-| Regional `LambdaExecutionRole` | `firehose:PutRecordBatch` on this stack's delivery stream; `logs:CreateLogStream` / `logs:PutLogEvents` in its ingestion log group | `LambdaPermissionsBoundaryArn` |
+| Regional `LambdaExecutionRole` | `firehose:PutRecordBatch` on this stack's delivery stream; `logs:CreateLogStream` / `logs:PutLogEvents` in its ingestion log group; own Lambda environment decryption | `LambdaPermissionsBoundaryArn` |
 | Regional `FirehoseDeliveryRole` | Delivery S3 operations on this stack's bucket and objects; Encrypt/Decrypt/GenerateDataKey on `KmsKeyArn` only when configured | `FirehosePermissionsBoundaryArn` |
-| Global `EdgeRouterRole` | Create/write only its own CloudWatch log groups and streams, including Lambda@Edge replicas across execution regions | `EdgeRouterPermissionsBoundaryArn` |
+| Global `EdgeRouterRole` | Create/write only its own CloudWatch log groups and streams, including Lambda@Edge replicas across execution regions; own Lambda environment decryption | `EdgeRouterPermissionsBoundaryArn` |
 
 The generated boundaries explicitly deny other actions and resources. This also prevents a later broad identity policy or a direct resource-policy session grant from overriding those denials while the boundary remains attached. Ingestion cannot read S3, assume other roles or administer IAM. Firehose cannot delete event objects or access another bucket/key. The edge router cannot access event storage or Firehose.
 
@@ -37,6 +37,9 @@ Use the `US` or `APAC` prefix for other enabled groups. Bind these values from y
 The table above uses the underlying regional template parameter names, which remain available for advanced existing-stack integrations. Customers should update the coordinated root rather than edit its managed child stacks or StackSets directly.
 
 ## Required permissions and region scope
+
+All Lambda execution roles also need `kms:Decrypt` for their own environment startup encryption. The default ceilings restrict this to the AWS-managed `alias/aws/lambda` key in the account and the exact function encryption context (`kms:EncryptionContext:aws:lambda:FunctionArn`), including that function's versions. Edge replicas use the corresponding regional key/context. Explicit denials reject other keys/aliases and other function contexts. This is not permission to decrypt customer S3 data keys. Customer-owned roles/boundaries must preserve this startup permission; an unconditional deny of KMS decryption prevents Lambda from starting even with an AWS-managed key. The same rule applies to the read-only lookup role and seller registration function.
+
 
 Custom policies must allow every operation in the table on the exact resources selected by the deployment. Ingestion's log group is pre-created, so its role does not need `logs:CreateLogGroup`. Firehose bucket permissions are `GetBucketLocation`, `ListBucket`, `ListBucketMultipartUploads`; object permissions are `AbortMultipartUpload`, `GetObject`, `PutObject`. The optional KMS ceiling includes `kms:Encrypt`, `kms:Decrypt`, `kms:GenerateDataKey`; the key policy must independently authorize the delivery role. Without `KmsKeyArn`, the default delivery boundary permits no KMS resources.
 
