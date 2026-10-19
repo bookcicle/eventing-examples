@@ -58,12 +58,68 @@
             },
             {
               "Effect": "Allow",
-              "Action": [
-                "firehose:PutRecordBatch"
-              ],
+              "Action": {
+                "Fn::If": [
+                  "UseDurableBuffer",
+                  "kinesis:PutRecords",
+                  "firehose:PutRecordBatch"
+                ]
+              },
               "Resource": {
-                "Fn::GetAtt": "EventsDeliveryStream.Arn"
+                "Fn::If": [
+                  "UseDurableBuffer",
+                  {
+                    "Fn::GetAtt": "DurableIngressStream.Arn"
+                  },
+                  {
+                    "Fn::GetAtt": "EventsDeliveryStream.Arn"
+                  }
+                ]
               }
+            },
+            {
+              "Fn::If": [
+                "UseDurableBuffer",
+                {
+                  "Effect": "Allow",
+                  "Action": "kms:GenerateDataKey",
+                  "Resource": {
+                    "Fn::If": [
+                      "HasCustomKmsKey",
+                      {
+                        "Ref": "KmsKeyArn"
+                      },
+                      {
+                        "Fn::Sub": "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+                      }
+                    ]
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "kms:EncryptionContext:aws:kinesis:arn": {
+                        "Fn::GetAtt": "DurableIngressStream.Arn"
+                      },
+                      "kms:ViaService": {
+                        "Fn::Sub": "kinesis.${AWS::Region}.${AWS::URLSuffix}"
+                      }
+                    },
+                    "ForAnyValue:StringEquals": {
+                      "Fn::If": [
+                        "HasCustomKmsKey",
+                        {
+                          "Ref": "AWS::NoValue"
+                        },
+                        {
+                          "kms:ResourceAliases": "alias/aws/kinesis"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
             }
           ]
         }
@@ -89,6 +145,73 @@
         "PolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
+            {
+              "Fn::If": [
+                "UseDurableBuffer",
+                {
+                  "Sid": "ReadDurableIngress",
+                  "Effect": "Allow",
+                  "Action": [
+                    "kinesis:DescribeStream",
+                    "kinesis:DescribeStreamSummary",
+                    "kinesis:ListShards",
+                    "kinesis:GetShardIterator",
+                    "kinesis:GetRecords"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": "DurableIngressStream.Arn"
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "UseDurableBuffer",
+                {
+                  "Sid": "DecryptDurableIngress",
+                  "Effect": "Allow",
+                  "Action": "kms:Decrypt",
+                  "Resource": {
+                    "Fn::If": [
+                      "HasCustomKmsKey",
+                      {
+                        "Ref": "KmsKeyArn"
+                      },
+                      {
+                        "Fn::Sub": "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+                      }
+                    ]
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "kms:EncryptionContext:aws:kinesis:arn": {
+                        "Fn::GetAtt": "DurableIngressStream.Arn"
+                      },
+                      "kms:ViaService": {
+                        "Fn::Sub": "kinesis.${AWS::Region}.${AWS::URLSuffix}"
+                      }
+                    },
+                    "ForAnyValue:StringEquals": {
+                      "Fn::If": [
+                        "HasCustomKmsKey",
+                        {
+                          "Ref": "AWS::NoValue"
+                        },
+                        {
+                          "kms:ResourceAliases": "alias/aws/kinesis"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
             {
               "Effect": "Allow",
               "Action": [

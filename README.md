@@ -4,7 +4,7 @@ Public customer examples for [Eventing by Bookcicle](https://eventing.bookcicle.
 No access to the service implementation repository is required.
 
 - [Guided onboarding](docs/onboarding.md), including Marketplace launch with platform-owned roles for restricted accounts.
-- [Configuration reference](docs/configuration.md) and [platform IAM guidance](docs/permissions-boundaries.md).
+- [Configuration reference](docs/configuration.md), [capacity and delivery guide](docs/scaling.md), and [platform IAM guidance](docs/permissions-boundaries.md).
 - [Build an auth layer](docs/auth-layer.md): local demo and a separate JWT/JWKS starter.
 - [Python, Rust and curl producers](docs/runtime-examples.md).
 - Browser SDK in `sdk/js`; public wire types in `crates/eventing-contract`.

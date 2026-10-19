@@ -87,7 +87,7 @@ All three use `x-event-auth: Bearer <token>`. For the synthetic demo layer only,
 
 ## Responses, retries and delivery semantics
 
-HTTP 202 means the ingestion function accepted the batch into Firehose; it does not confirm that S3 delivery has completed. The actual response includes `status: accepted` and `accepted_events`; inspect regional Firehose/S3 metrics for delivery completion. Each CLI reports acceptance without printing raw response bodies or credentials.
+HTTP 202 means the ingestion function accepted the batch into its configured stream: Firehose in direct mode, or Kinesis in optional durable mode. It does not confirm that S3 delivery has completed. The actual response includes `status: accepted` and `accepted_events`; inspect regional Firehose/S3 metrics for delivery completion. Each CLI reports acceptance without printing raw response bodies or credentials.
 
 Retry HTTP 429, 500, 502, 503 and 504 with bounded backoff. A connection failure or timeout has an uncertain outcome; these examples retry while preserving IDs and serialized bytes. **Exactly-once delivery and server-side deduplication are not promised.** Downstream consumers should deduplicate by event ID when needed. These starter CLIs have no durable offline queue; production services should persist pending events and handle exhausted retries according to their delivery requirements.
 

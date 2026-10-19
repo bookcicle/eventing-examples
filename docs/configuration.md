@@ -29,3 +29,7 @@ Use a delegated root CloudFormation service role for Marketplace launch. If laun
 Update the existing coordinated deployment through the Marketplace offering’s approved update workflow. Do not independently modify its managed children. Bind regional layer/key/topic ARNs from their platform resources. Treat IAM mode, installation identity and enabled-region changes as reviewed migrations. Stop producers and drain delivery buffers before removal; retained S3 objects and edge replicas require lifecycle review.
 
 Public JSON files describe the supported customer contract. Always review the actual approved release/change set and your account policies before deployment; these references do not perform live IAM verification.
+
+## Capacity and optional durable ingestion
+
+See the [capacity and delivery guide](scaling.md) for monthly-request planning examples, the measured internal dev baseline, auth-layer overhead, stable IDs and opt-in Kinesis buffering. `IngestionMode` defaults to `direct`; `kinesis` adds a retained encrypted buffer and separate AWS charges. Select the mode at installation creation; mode changes require a reviewed migration.

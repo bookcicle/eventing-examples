@@ -103,6 +103,21 @@
         ],
         "Default": "FIREHOSE_DYNAMIC"
       },
+      "IngestionMode": {
+        "Type": "String",
+        "Description": "Ingestion path; choose at creation, mode changes need migration",
+        "AllowedValues": [
+          "direct",
+          "kinesis"
+        ],
+        "Default": "direct"
+      },
+      "DurableRetentionHours": {
+        "Type": "Number",
+        "Default": 24,
+        "MinValue": 24,
+        "MaxValue": 168
+      },
       "LambdaReservedConcurrency": {
         "Type": "Number",
         "Default": 100,
@@ -466,6 +481,22 @@
       }
     },
     "regional": {
+      "IngestionMode": {
+        "Type": "String",
+        "Default": "direct",
+        "AllowedValues": [
+          "direct",
+          "kinesis"
+        ],
+        "Description": "direct writes Firehose; kinesis adds an opt-in durable regional buffer with additional AWS charges. Choose at installation creation; changing mode requires a migration."
+      },
+      "DurableRetentionHours": {
+        "Type": "Number",
+        "Default": 24,
+        "MinValue": 24,
+        "MaxValue": 168,
+        "Description": "Kinesis replay window in hours; additional retention is billed by AWS"
+      },
       "IamMode": {
         "Type": "String",
         "Default": "managed",
@@ -691,6 +722,18 @@
     },
     "EVENTS_FIREHOSE_STREAM_NAME": {
       "Ref": "EventsDeliveryStream"
+    },
+    "EVENTS_DELIVERY_MODE": {
+      "Ref": "IngestionMode"
+    },
+    "EVENTS_KINESIS_STREAM_NAME": {
+      "Fn::If": [
+        "UseDurableBuffer",
+        {
+          "Ref": "DurableIngressStream"
+        },
+        ""
+      ]
     },
     "GEO_DATA": {
       "Ref": "GeoData"
