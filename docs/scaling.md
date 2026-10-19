@@ -39,26 +39,20 @@ Eventing provides **buffered delivery with selective retries**, not guaranteed e
 
 ## Delivery options
 
-Firehose remains the default. The optional Kinesis → Firehose path is prepared for the next release candidate; it is not included in published 0.1.4 artifacts. Dedicated-account deployment, outage/recovery and cost tests are pending. The capacity table above models Lambda concurrency, not Kinesis throughput or recovery capacity.
+Firehose is the default. Kinesis buffering is a next-release candidate, absent from published 0.1.4. Dedicated-account deployment, outage/recovery and cost tests are pending.
 
-| Setting or behavior | Default: Firehose | Optional: Kinesis → Firehose |
+| Feature | Firehose only | Kinesis → Firehose |
 | --- | --- | --- |
-| Path | Lambda → Firehose → your S3 | Lambda → Kinesis Data Streams → Firehose → your S3 |
-| Choose when | You want fewer resources and lower operating complexity | You need a retained ingestion stream and can operate its recovery window |
-| HTTP 202 | Firehose acknowledged every submitted record | Kinesis acknowledged every submitted record; Firehose and S3 delivery remain asynchronous |
-| Retention control | No customer-configurable ingress replay stream; Firehose manages delivery buffering | `DurableRetentionHours`, 24–8760 hours; default 24. Records expire after this window |
-| Capacity | Firehose and Lambda quotas still apply | `KinesisCapacityMode=ON_DEMAND` (Standard) by default, or `PROVISIONED` with `KinesisShardCount=1` initially; configure each regional stream through IaC |
-| Encryption | Firehose/S3 encryption and optional customer KMS key | Also encrypts the stream with the regional AWS-managed key, or the configured `KmsKeyArn` |
-| Monitoring | Ingestion errors, throttles, Firehose freshness and S3 arrival | Also stream write throttles and Firehose reader lag; `KinesisEnhancedMonitoring=true` adds selected billable shard metrics |
-| Replay and extra consumers | Customer-owned recovery from producer queues or stored S3 | Retained records can support customer-managed consumers/replay within the window. This package does not deploy a replay job, additional consumer or enhanced fan-out |
-| Additional AWS cost | Existing Lambda, Firehose, S3, edge, WAF, logs and applicable KMS charges | Adds stream capacity/usage, applicable reads and retention, optional shard metrics and KMS usage. Firehose and S3 charges still apply |
-| Delivery limits | Bounded retries; loss, duplicates and uncertain outcomes remain possible | Same limits; retention buys a recovery window, not guaranteed recovery, zero loss, ordering or exactly-once delivery |
+| Choose when | Buffered S3 delivery meets your needs | You need a retained stream or customer-built consumers |
+| HTTP 202 | Firehose accepted every record | Kinesis accepted every record; Firehose and S3 delivery remain asynchronous |
+| Retention | Service-managed buffering; no ingress replay stream | 24–8760 hours; default 24. Expired records cannot be recovered |
+| Capacity | Lambda and Firehose quotas | On-demand Standard, or provisioned shards; size for writes and backlog catch-up |
+| Extra AWS cost | Existing ingestion and storage charges | Stream capacity/usage, reads, extended retention and optional metrics/KMS; Firehose and S3 still apply |
+| Recovery | Your producer queues and stored data | Your recovery process within retention; no replay job or extra consumer is bundled |
 
-Choose `IngestionMode=direct` or `kinesis` when creating the installation through Marketplace's coordinated launch. The default is `direct`; Kinesis-specific settings have no effect in that mode. These settings become available only with the new immutable release. Mode changes on an existing installation require a planned migration, draining/reconciling records and moving producers; do not toggle a live stack in place. S3 and the Kinesis stream are retained on stack deletion and can continue to incur charges until deliberately removed.
+Neither path guarantees delivery, ordering or exactly-once processing. Monthly concurrency examples model Lambda, not Kinesis throughput.
 
-For a Kinesis installation, start with 24 hours on-demand Standard unless your recovery objective requires longer retention. Size provisioned shards against both record rate and bytes, including skew, Firehose shared-read capacity, and backlog catch-up. Longer retention alone does not increase throughput. Alert before lag approaches the retention window; reducing retention can expire older data. Lower-volume applications may find a continuously active stream costs more than their other ingestion resources. No tested dollar premium or Kinesis throughput baseline is available yet.
-
-Example desired-state inputs for the next coordinated release (not deployment commands):
+Choose the mode at installation creation. Existing installations need a planned migration: drain, reconcile, then move producers. S3 and the stream are retained on stack deletion and can continue billing.
 
 ```json
 {
@@ -69,9 +63,9 @@ Example desired-state inputs for the next coordinated release (not deployment co
 }
 ```
 
-The stack also accepts `KinesisShardCount` for provisioned mode; account quotas still apply. On-demand Advantage, warm throughput controls, enhanced fan-out and custom consumers are outside this option. Stream creation, retention, encryption, capacity and monitoring remain owned by CloudFormation. Runtime ingestion can only write its stream; Firehose can only read that stream and deliver to its S3 destination. Restricted-account platform teams must provision matching mode-specific role policies and boundaries before launch.
+Start with 24-hour retention unless your recovery objective needs more. Provisioned mode also accepts `KinesisShardCount`. Monitor write throttles, reader lag and S3 arrival; longer retention does not add throughput. Reducing retention can expire records. Configure encryption with `KmsKeyArn` and provision matching IAM boundaries before restricted-account launch. On-demand Advantage, warm throughput and enhanced fan-out are outside this option.
 
-See AWS documentation for [stream configuration](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesis-stream.html), [retention](https://docs.aws.amazon.com/streams/latest/dev/kinesis-extended-retention.html), [Firehose stream sources](https://docs.aws.amazon.com/firehose/latest/dev/writing-with-kinesis-streams.html), [Kinesis pricing](https://aws.amazon.com/kinesis/data-streams/pricing/) and [Firehose pricing](https://aws.amazon.com/firehose/pricing/). Price the selected region and actual record/byte distribution; software license and AWS usage charges remain separate.
+See the [configuration guide](configuration.md), [AWS stream settings](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesis-stream.html), [Kinesis pricing](https://aws.amazon.com/kinesis/data-streams/pricing/) and [Firehose pricing](https://aws.amazon.com/firehose/pricing/). Calculator figures are planning estimates, not measured bills.
 
 ## Measured baseline, 19 October 2026
 
