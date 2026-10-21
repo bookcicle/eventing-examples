@@ -304,11 +304,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "event-auth-reference"
+name = "event-context-reference"
 version = "0.1.0"
 dependencies = [
  "eventing-contract",
- "serde",
  "serde_json",
 ]
 

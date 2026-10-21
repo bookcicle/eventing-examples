@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/eventing-contract", "crates/event-auth-reference", "crates/event-auth-jwt", "examples/rust"]
+members = ["crates/eventing-contract", "crates/event-auth-jwt", "crates/event-context-reference", "examples/rust"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"

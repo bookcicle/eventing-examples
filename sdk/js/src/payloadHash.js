@@ -5,10 +5,14 @@
 export async function sha256Hex(bytes) {
   const subtle = globalThis.crypto?.subtle;
   if (!subtle) {
-    throw new Error("Web Crypto API (crypto.subtle) is required for SHA-256 payload hashing");
+    throw new Error(
+      "Web Crypto API (crypto.subtle) is required for SHA-256 payload hashing",
+    );
   }
   const digest = await subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(digest), (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 export function encodeUtf8Bytes(str) {

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
-import { createEventingClient } from "../src/index.js";
+import { createEventingClient, DurableEventQueue } from "../src/index.js";
 
 test("SDK emits canonical v1 batch, computes exact SHA-256 hash, and strips default PII/click IDs", async () => {
   const requests = [];
@@ -12,6 +12,7 @@ test("SDK emits canonical v1 batch, computes exact SHA-256 hash, and strips defa
 
   const client = createEventingClient({
     endpoint: "https://events.customer.example/events",
+    queue: new DurableEventQueue({ storage: "memory" }),
     defaultNamespace: "claims",
     getAuthToken: async () => "secret-session-jwt-999",
     credentials: "include",
@@ -46,7 +47,10 @@ test("SDK emits canonical v1 batch, computes exact SHA-256 hash, and strips defa
   const sent = requests[0];
   assert.equal(sent.url, "https://events.customer.example/events");
   assert.equal(sent.init.credentials, "include");
-  assert.equal(sent.init.headers["x-event-auth"], "Bearer secret-session-jwt-999");
+  assert.equal(
+    sent.init.headers["x-event-auth"],
+    "Bearer secret-session-jwt-999",
+  );
 
   const expectedHash = crypto
     .createHash("sha256")

@@ -19,6 +19,30 @@
           "Version": "2012-10-17",
           "Statement": [
             {
+              "Fn::If": [
+                "RateLimitOn",
+                {
+                  "Effect": "Allow",
+                  "Action": "dynamodb:UpdateItem",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${DeploymentId}-${Stage}-rate-limits"
+                  },
+                  "Condition": {
+                    "ForAllValues:StringLike": {
+                      "dynamodb:LeadingKeys": [
+                        {
+                          "Fn::Sub": "${AWS::Region}:*"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
               "Sid": "AllowOwnLambdaEnvironmentDecrypt",
               "Effect": "Allow",
               "Action": "kms:Decrypt",

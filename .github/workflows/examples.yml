@@ -15,6 +15,6 @@ jobs:
       - run: python3 scripts/generate-test-keys.py
       - run: cargo test --locked --workspace
       - run: cargo build --locked --workspace
-      - run: python3 scripts/test-auth-reference.py
       - run: python3 scripts/test-producers.py
-      - run: node --test sdk/js/test/*.test.mjs
+      - run: npm --prefix sdk/js ci
+      - run: npm --prefix sdk/js test

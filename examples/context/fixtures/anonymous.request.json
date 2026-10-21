@@ -1,0 +1,20 @@
+{
+  "contract_version": "2",
+  "request_id": "local-context-check",
+  "path": "/events",
+  "method": "POST",
+  "headers": {},
+  "schema_version": "1",
+  "batch_id": "00000000-0000-4000-8000-000000000001",
+  "batch": {
+    "count": 1,
+    "event_names": ["page_view"],
+    "requested_namespaces": ["general"]
+  },
+  "events": [{
+    "event_id": "opaque-producer-id",
+    "name": "page_view",
+    "context": {"namespace": "general", "sid": "opaque-producer-session"},
+    "properties": {"path": "/checkout"}
+  }]
+}

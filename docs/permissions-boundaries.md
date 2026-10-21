@@ -81,6 +81,27 @@ Boundary parameters in pre-provisioned mode are declarations of the platform con
 
 Choose the approved root CloudFormation service role in Marketplace launch permissions; it is separate from `ExecutionRoleName`, which is the StackSet regional execution role. Users without delegated launch permission ask their platform team to conduct the Marketplace launch. The [onboarding guide](onboarding.md) maps every required role/boundary and describes platform preparation and update ownership.
 
-## Optional Kinesis path in the next release candidate
+## Optional Kinesis path
 
-For `IngestionMode=kinesis`, the ingestion role and boundary permit `kinesis:PutRecords` only on the installation's regional stream. They do not grant Firehose writes or stream reads. The Firehose role and boundary add scoped Kinesis describe/read and stream-key decrypt permissions. Ingestion's stream-key grant is `kms:GenerateDataKey`; AWS-managed key use is restricted by its alias, stream encryption context and regional Kinesis service. Existing startup decryption remains separate. Customer-managed boundaries and pre-provisioned roles must allow the selected mode before launch. See the [configuration and IAM references](../reference/runtime-iam-policies.json) and [delivery options](scaling.md#delivery-options). This candidate requires live acceptance before release.
+For `IngestionMode=kinesis`, the ingestion role and boundary permit `kinesis:PutRecords` only on the installation's regional stream. They do not grant Firehose writes or stream reads. The Firehose role and boundary add scoped Kinesis describe/read and stream-key decrypt permissions. Ingestion's stream-key grant is `kms:GenerateDataKey`; AWS-managed key use is restricted by its alias, stream encryption context and regional Kinesis service. Existing startup decryption remains separate. Customer-managed boundaries and pre-provisioned roles must allow the selected mode before launch. See the [configuration and IAM references](https://github.com/bookcicle/eventing-examples/blob/main/reference/runtime-iam-policies.json) and [delivery options](scaling.md#delivery-options). Validate the selected delivery path and its permissions in your test installation before production rollout.
+
+## DynamoDB admission quotas
+
+When `RateLimitEnabled=true`, ingestion's identity policy and ceiling add
+`dynamodb:UpdateItem` only on
+`arn:aws:dynamodb:<region>:<account>:table/<DeploymentId>-<Stage>-rate-limits`,
+with `ForAllValues:StringLike` on `dynamodb:LeadingKeys` matching `<region>:*`.
+DynamoDB transactions use the permissions of their underlying updates. No reads,
+scans, deletes or table administration are granted to ingestion. Platform-owned
+roles and external boundaries need the same permission before enabling quotas.
+The auth subprocess shares these permissions.
+
+The regional StackSet execution role needs scoped table/replica/TTL/tag lifecycle
+permissions in every enabled replica region, plus log metric-filter management.
+The execution role also permits KMS grants only for AWS resources through DynamoDB, restricted to `alias/aws/dynamodb`; no customer KMS key grant is added.
+The managed execution role can create only the DynamoDB replication service-linked
+role, constrained by `iam:AWSServiceName=replication.dynamodb.amazonaws.com`.
+In restricted accounts, have the platform create that service-linked role and
+supply the scoped deployment permissions. The table is owned by exactly one
+regional stack; changing that owner is a migration. See
+[service rate limits](configuration.md#service-rate-limits).
