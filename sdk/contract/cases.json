@@ -1,0 +1,238 @@
+{
+  "schema_version": "1",
+  "defaults": {
+    "max_batch_events": 25,
+    "flush_interval_ms": 1000,
+    "max_batch_age_ms": 5000,
+    "max_queue_items": 1000,
+    "max_batch_bytes": 8192,
+    "max_attempts": 3,
+    "base_backoff_ms": 200,
+    "timeout_ms": 5000
+  },
+  "retry_cases": [
+    {
+      "statuses": [
+        429,
+        503,
+        202
+      ],
+      "attempts": 3,
+      "ok": true
+    },
+    {
+      "statuses": [
+        500,
+        202
+      ],
+      "attempts": 2,
+      "ok": true
+    },
+    {
+      "statuses": [
+        502,
+        202
+      ],
+      "attempts": 2,
+      "ok": true
+    },
+    {
+      "statuses": [
+        504,
+        202
+      ],
+      "attempts": 2,
+      "ok": true
+    },
+    {
+      "statuses": [
+        503,
+        503,
+        503,
+        202
+      ],
+      "attempts": 3,
+      "ok": false
+    },
+    {
+      "statuses": [
+        400,
+        202
+      ],
+      "attempts": 1,
+      "ok": false
+    },
+    {
+      "statuses": [
+        401,
+        202
+      ],
+      "attempts": 1,
+      "ok": false
+    },
+    {
+      "statuses": [
+        403,
+        202
+      ],
+      "attempts": 1,
+      "ok": false
+    },
+    {
+      "statuses": [
+        413,
+        202
+      ],
+      "attempts": 1,
+      "ok": false
+    },
+    {
+      "statuses": [
+        451,
+        202
+      ],
+      "attempts": 1,
+      "ok": false
+    },
+    {
+      "statuses": [
+        301,
+        202
+      ],
+      "attempts": 1,
+      "ok": false
+    },
+    {
+      "statuses": [
+        200,
+        202
+      ],
+      "attempts": 1,
+      "ok": false
+    },
+    {
+      "statuses": [
+        501,
+        202
+      ],
+      "attempts": 1,
+      "ok": false
+    }
+  ],
+  "event": {
+    "event_id": "7fb6d6b2-9bb3-43f6-86b4-53ea7d9cf991",
+    "name": "  checkout_completed  ",
+    "event_time": "2026-10-19T10:30:00Z",
+    "namespace": "claims",
+    "properties": {
+      "product": "caf\u00e9 \ud83d\udcda",
+      "Email": "private@example.test",
+      "nested": {
+        "TOKEN": "never-store",
+        "phone": "private",
+        "safe": true
+      },
+      "items": [
+        {
+          "authorization": "never-store",
+          "quantity": 2
+        }
+      ]
+    },
+    "sid": "shared-contract-session"
+  },
+  "properties": {
+    "product": "caf\u00e9 \ud83d\udcda",
+    "nested": {
+      "safe": true
+    },
+    "items": [
+      {
+        "quantity": 2
+      }
+    ]
+  },
+  "invalid_endpoints": [
+    "https://user:pass@example.com/events",
+    "http://example.com/events",
+    "https://example.com/events?token=secret",
+    "https://example.com/events#fragment",
+    "https://example.com/other",
+    "ftp://example.com/events"
+  ],
+  "session_cases": [
+    {
+      "name": "x"
+    },
+    {
+      "name": "x"
+    },
+    {
+      "name": "x",
+      "sid": "explicit"
+    },
+    {
+      "name": "x",
+      "context": {
+        "sid": "context"
+      }
+    },
+    {
+      "name": "x",
+      "sid": "override",
+      "context": {
+        "sid": "other"
+      }
+    }
+  ],
+  "invalid_sids": [
+    "",
+    " ",
+    null,
+    3,
+    "line\nbreak",
+    "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9"
+  ],
+  "valid_event_ids": [
+    "opaque:42",
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9",
+    "\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda\ud83d\udcda"
+  ],
+  "invalid_event_ids": [
+    null,
+    1,
+    true,
+    "",
+    " ",
+    " padded",
+    "padded ",
+    "id\nline",
+    "id\u0085control",
+    "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9",
+    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "\u00a0leading",
+    "trailing\u3000",
+    "\ufeffleading",
+    "trailing\ufeff"
+  ],
+  "environments": {
+    "default": "prod",
+    "allowed": [
+      "dev",
+      "test",
+      "prod"
+    ],
+    "invalid": [
+      "",
+      "staging",
+      "TEST"
+    ],
+    "scope_fields": [
+      "endpoint",
+      "environment",
+      "namespace"
+    ],
+    "queue_version": 2
+  }
+}

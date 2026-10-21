@@ -1,27 +1,28 @@
-use event_auth_jwt::{deny, Verifier};
-use eventing_contract::auth_contract::AuthPluginInput;
+use event_auth_jwt::{reject_context, Verifier};
+use eventing_contract::context_types::ContextPluginInput;
 use std::{
     io::{self, Read, Write},
     path::PathBuf,
 };
+const MAX_CONTEXT_INPUT_BYTES: u64 = 2 * 1024 * 1024;
 fn main() {
     let result = (|| {
         let mut bytes = Vec::new();
         io::stdin()
-            .take(256 * 1024 + 1)
+            .take(MAX_CONTEXT_INPUT_BYTES + 1)
             .read_to_end(&mut bytes)
             .ok()?;
-        if bytes.len() > 256 * 1024 {
+        if bytes.len() as u64 > MAX_CONTEXT_INPUT_BYTES {
             return None;
         }
-        let input: AuthPluginInput = serde_json::from_slice(&bytes).ok()?;
-        let path = std::env::var_os("EVENT_AUTH_CONFIG")
+        let input: ContextPluginInput = serde_json::from_slice(&bytes).ok()?;
+        let path = std::env::var_os("EVENT_CONTEXT_CONFIG")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("/opt/event-auth/config.json"));
-        Some(Verifier::load(&path).ok()?.evaluate(&input))
+            .unwrap_or_else(|| PathBuf::from("/opt/event-context/config.json"));
+        Some(Verifier::load(&path).ok()?.evaluate_context(&input))
     })()
-    .unwrap_or_else(deny);
-    // Only contract JSON goes to stdout. Never log tokens, raw requests or claims.
+    .unwrap_or_else(reject_context);
+    // Only version 2 contract JSON goes to stdout, including every error path.
     if let Ok(bytes) = serde_json::to_vec(&result) {
         let _ = io::stdout().write_all(&bytes);
     }

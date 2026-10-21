@@ -22,6 +22,10 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
     let mut batch: serde_json::Value = serde_json::from_str(include_str!("../../batch.json"))?;
     batch["batch_id"] = Uuid::new_v4().to_string().into();
+    let sid = env::var("EVENTING_SID").unwrap_or_else(|_| Uuid::new_v4().to_string());
+    if sid.trim().is_empty() || sid.len() > 256 || sid.chars().any(|c| c.is_ascii_control()) {
+        return Err("Invalid EVENTING_SID".into());
+    }
     for event in batch["events"]
         .as_array_mut()
         .ok_or("Missing fixture events")?
@@ -31,6 +35,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         event["context"]["namespace"] = env::var("EVENTING_NAMESPACE")
             .unwrap_or_else(|_| "general".into())
             .into();
+        event["context"]["sid"] = sid.clone().into();
         event["properties"]["runtime"] = "rust".into();
     }
     let body = serde_json::to_vec(&batch)?;

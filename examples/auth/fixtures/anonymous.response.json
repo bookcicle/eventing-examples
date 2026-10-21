@@ -1,8 +1,0 @@
-{
-  "contract_version": "1",
-  "decision": "anonymous",
-  "context": {},
-  "allowed_namespaces": [
-    "general"
-  ]
-}

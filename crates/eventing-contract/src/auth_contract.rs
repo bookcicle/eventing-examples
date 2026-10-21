@@ -23,6 +23,7 @@ pub const DEFAULT_ALLOWED_CONTEXT_KEYS: &[&str] = &[
     "department",
     "org_id",
     "session_id",
+    "rate_limit_tier",
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

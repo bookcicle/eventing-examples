@@ -14,6 +14,7 @@
         "Description": "Environment; separate accounts are recommended for production",
         "AllowedValues": [
           "dev",
+          "test",
           "prod"
         ],
         "Default": "prod"
@@ -35,12 +36,13 @@
       },
       "ResidencyMode": {
         "Type": "String",
-        "Description": "Reject unmapped country groups unless fallback is explicitly authorized",
+        "Description": "Nearest enabled region by viewer geography; legacy country policies remain opt-in",
         "AllowedValues": [
+          "nearest",
           "fail_closed",
           "default_fallback"
         ],
-        "Default": "fail_closed"
+        "Default": "nearest"
       },
       "GeoData": {
         "Type": "String",
@@ -157,14 +159,17 @@
       },
       "RetentionDays": {
         "Type": "Number",
-        "Default": 365,
-        "MinValue": 1,
+        "Description": "0 selects the stage default: 7 days for test, 365 for dev/prod; positive values override it",
+        "Default": 0,
+        "MinValue": 0,
         "MaxValue": 3650
       },
       "LogRetentionDays": {
         "Type": "Number",
-        "Default": 30,
+        "Description": "0 selects the stage default: 7 days for test, 30 for dev/prod",
+        "Default": 0,
         "AllowedValues": [
+          0,
           7,
           14,
           30,
@@ -188,24 +193,66 @@
         "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
         "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
       },
+      "RateLimitEnabled": {
+        "Type": "String",
+        "Description": "Enable customer-owned regional admission quotas",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Default": "true"
+      },
+      "RateLimitFailureMode": {
+        "Type": "String",
+        "Description": "Reject with 503 on limiter outage, or explicitly allow unmetered ingestion",
+        "AllowedValues": [
+          "closed",
+          "open"
+        ],
+        "Default": "closed"
+      },
+      "RateLimitTiers": {
+        "Type": "String",
+        "Description": "JSON map of trusted auth tier names to requests/events/bytes per minute per identity per region",
+        "MaxLength": 4096,
+        "Default": "{}"
+      },
+      "RateLimitUserQuota": {
+        "Type": "String",
+        "Description": "JSON requests/events/bytes per minute per region (user scope)",
+        "MaxLength": 256,
+        "Default": "{\"requests\":100,\"events\":50000,\"bytes\":104857600}"
+      },
+      "RateLimitTenantQuota": {
+        "Type": "String",
+        "Description": "JSON requests/events/bytes per minute per region (tenant scope)",
+        "MaxLength": 256,
+        "Default": "{\"requests\":10000,\"events\":5000000,\"bytes\":10737418240}"
+      },
+      "RateLimitAnonymousQuota": {
+        "Type": "String",
+        "Description": "JSON requests/events/bytes per minute per region (anonymous scope)",
+        "MaxLength": 256,
+        "Default": "{\"requests\":1000,\"events\":500000,\"bytes\":1073741824}"
+      },
       "EURegion": {
         "Type": "String",
-        "Description": "Region for the EU country group; empty disables it",
+        "Description": "Enabled ingestion origin (EU slot); empty disables it",
         "AllowedValues": [
           "",
           "eu-west-1",
           "eu-central-1"
         ],
-        "Default": "eu-west-1"
+        "Default": ""
       },
       "EUKmsKeyArn": {
         "Type": "String",
         "Description": "Regional customer KMS key for EU; optional",
         "Default": ""
       },
-      "EUAuthPluginLayerArn": {
+      "EUContextPluginLayerArn": {
         "Type": "String",
-        "Description": "Immutable regional auth layer ARN; empty disables auth for EU; optional",
+        "Description": "Immutable v2 Context Layer ARN providing /opt/bin/event-context for EU; optional",
         "Default": ""
       },
       "EUAlarmTopicArn": {
@@ -229,22 +276,22 @@
       },
       "USRegion": {
         "Type": "String",
-        "Description": "Region for the US country group; empty disables it",
+        "Description": "Enabled ingestion origin (US slot); empty disables it",
         "AllowedValues": [
           "",
           "us-east-1",
           "us-west-2"
         ],
-        "Default": ""
+        "Default": "us-east-1"
       },
       "USKmsKeyArn": {
         "Type": "String",
         "Description": "Regional customer KMS key for US; optional",
         "Default": ""
       },
-      "USAuthPluginLayerArn": {
+      "USContextPluginLayerArn": {
         "Type": "String",
-        "Description": "Immutable regional auth layer ARN; empty disables auth for US; optional",
+        "Description": "Immutable v2 Context Layer ARN providing /opt/bin/event-context for US; optional",
         "Default": ""
       },
       "USAlarmTopicArn": {
@@ -268,7 +315,7 @@
       },
       "APACRegion": {
         "Type": "String",
-        "Description": "Region for the APAC country group; empty disables it",
+        "Description": "Enabled ingestion origin (APAC slot); empty disables it",
         "AllowedValues": [
           "",
           "ap-southeast-1",
@@ -282,9 +329,9 @@
         "Description": "Regional customer KMS key for APAC; optional",
         "Default": ""
       },
-      "APACAuthPluginLayerArn": {
+      "APACContextPluginLayerArn": {
         "Type": "String",
-        "Description": "Immutable regional auth layer ARN; empty disables auth for APAC; optional",
+        "Description": "Immutable v2 Context Layer ARN providing /opt/bin/event-context for APAC; optional",
         "Default": ""
       },
       "APACAlarmTopicArn": {
@@ -306,9 +353,111 @@
         "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
         "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
       },
-      "AuthPluginPassClientMetadata": {
+      "Additional1Region": {
         "Type": "String",
-        "Description": "Pass ephemeral client metadata to the regional auth plugin",
+        "Description": "Enabled ingestion origin (Additional1 slot); empty disables it",
+        "AllowedValues": [
+          "",
+          "ap-northeast-1",
+          "ap-southeast-1",
+          "ap-southeast-2",
+          "eu-central-1",
+          "eu-west-1",
+          "us-east-1",
+          "us-west-2"
+        ],
+        "Default": ""
+      },
+      "Additional1KmsKeyArn": {
+        "Type": "String",
+        "Description": "Regional customer KMS key for Additional1; optional",
+        "Default": ""
+      },
+      "Additional1ContextPluginLayerArn": {
+        "Type": "String",
+        "Description": "Immutable v2 Context Layer ARN providing /opt/bin/event-context for Additional1; optional",
+        "Default": ""
+      },
+      "Additional1AlarmTopicArn": {
+        "Type": "String",
+        "Description": "Regional SNS alarm topic for Additional1; optional",
+        "Default": ""
+      },
+      "Additional1LambdaPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer ingestion boundary for Additional1; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "Additional1FirehosePermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer delivery boundary for Additional1; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "Additional2Region": {
+        "Type": "String",
+        "Description": "Enabled ingestion origin (Additional2 slot); empty disables it",
+        "AllowedValues": [
+          "",
+          "ap-northeast-1",
+          "ap-southeast-1",
+          "ap-southeast-2",
+          "eu-central-1",
+          "eu-west-1",
+          "us-east-1",
+          "us-west-2"
+        ],
+        "Default": ""
+      },
+      "Additional2KmsKeyArn": {
+        "Type": "String",
+        "Description": "Regional customer KMS key for Additional2; optional",
+        "Default": ""
+      },
+      "Additional2ContextPluginLayerArn": {
+        "Type": "String",
+        "Description": "Immutable v2 Context Layer ARN providing /opt/bin/event-context for Additional2; optional",
+        "Default": ""
+      },
+      "Additional2AlarmTopicArn": {
+        "Type": "String",
+        "Description": "Regional SNS alarm topic for Additional2; optional",
+        "Default": ""
+      },
+      "Additional2LambdaPermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer ingestion boundary for Additional2; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "Additional2FirehosePermissionsBoundaryArn": {
+        "Type": "String",
+        "Description": "Customer delivery boundary for Additional2; optional",
+        "Default": "",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:policy/[A-Za-z0-9+=,.@_/-]+$",
+        "ConstraintDescription": "Use an existing customer-managed policy ARN, including its path."
+      },
+      "RateLimitOwnerRegion": {
+        "Type": "String",
+        "Description": "Enabled ingestion region owning the quota Global Table; keep stable across updates",
+        "AllowedValues": [
+          "ap-northeast-1",
+          "ap-southeast-1",
+          "ap-southeast-2",
+          "eu-central-1",
+          "eu-west-1",
+          "us-east-1",
+          "us-west-2"
+        ],
+        "Default": "us-east-1"
+      },
+      "ContextPluginPassClientMetadata": {
+        "Type": "String",
+        "Description": "Pass ephemeral client metadata to the v2 Context Layer",
         "AllowedValues": [
           "true",
           "false"
@@ -398,6 +547,30 @@
         "Description": "Platform-owned FirehoseRoleArn for APAC; required when this group is enabled in preprovisioned mode",
         "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
         "Default": ""
+      },
+      "Additional1LambdaRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned LambdaRoleArn for Additional1; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "Additional1FirehoseRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned FirehoseRoleArn for Additional1; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "Additional2LambdaRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned LambdaRoleArn for Additional2; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
+      },
+      "Additional2FirehoseRoleArn": {
+        "Type": "String",
+        "Description": "Platform-owned FirehoseRoleArn for Additional2; required when this group is enabled in preprovisioned mode",
+        "AllowedPattern": "^$|^arn:aws[a-z-]*:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+$",
+        "Default": ""
       }
     },
     "global": {
@@ -457,21 +630,29 @@
       "DefaultRegion": {
         "Type": "String",
         "Description": "Default regional origin when residency policy permits",
-        "Default": "eu-west-1"
+        "Default": "us-east-1"
       },
       "ResidencyMode": {
         "Type": "String",
-        "Description": "Regional routing enforcement policy (fail_closed rejects unmapped/unavailable regions)",
+        "Description": "nearest selects the closest enabled region by viewer location; legacy country policies are opt-in",
         "AllowedValues": [
+          "nearest",
           "fail_closed",
           "default_fallback"
         ],
-        "Default": "fail_closed"
+        "Default": "nearest"
       },
       "PrimaryRegionalOriginDomain": {
         "Type": "String",
         "Description": "Regional Lambda Function URL domain name for the primary region (e.g. xxx.lambda-url.eu-west-1.on.aws)",
         "MinLength": 10
+      },
+      "AdditionalRegionalOrigins": {
+        "Type": "String",
+        "Default": "[]",
+        "MaxLength": 512,
+        "Description": "JSON array of additional regional Lambda Function URL domains; coordinated deployment populates it",
+        "AllowedPattern": "^\\[(\"[a-z0-9.-]*\"(,\"[a-z0-9.-]*\")*)?\\]$"
       },
       "EuOriginDomain": {
         "Type": "String",
@@ -506,6 +687,68 @@
       }
     },
     "regional": {
+      "RateLimitEnabled": {
+        "Type": "String",
+        "Default": "false",
+        "AllowedValues": [
+          "true",
+          "false"
+        ],
+        "Description": "Enable customer-owned admission quotas; coordinated root enables by default"
+      },
+      "RateLimitOwnerRegion": {
+        "Type": "String",
+        "Default": "",
+        "Description": "Enabled region that exclusively owns the global table; changing requires a migration"
+      },
+      "RateLimitReplicaAdditional1": {
+        "Type": "String",
+        "Default": ""
+      },
+      "RateLimitReplicaAdditional2": {
+        "Type": "String",
+        "Default": ""
+      },
+      "RateLimitFailureMode": {
+        "Type": "String",
+        "Default": "closed",
+        "AllowedValues": [
+          "closed",
+          "open"
+        ]
+      },
+      "RateLimitTiers": {
+        "Type": "String",
+        "Default": "{}",
+        "MaxLength": 4096
+      },
+      "RateLimitUserQuota": {
+        "Type": "String",
+        "Default": "{\"requests\":100,\"events\":50000,\"bytes\":104857600}",
+        "MaxLength": 256
+      },
+      "RateLimitTenantQuota": {
+        "Type": "String",
+        "Default": "{\"requests\":10000,\"events\":5000000,\"bytes\":10737418240}",
+        "MaxLength": 256
+      },
+      "RateLimitAnonymousQuota": {
+        "Type": "String",
+        "Default": "{\"requests\":1000,\"events\":500000,\"bytes\":1073741824}",
+        "MaxLength": 256
+      },
+      "RateLimitReplicaEU": {
+        "Type": "String",
+        "Default": ""
+      },
+      "RateLimitReplicaUS": {
+        "Type": "String",
+        "Default": ""
+      },
+      "RateLimitReplicaAPAC": {
+        "Type": "String",
+        "Default": ""
+      },
       "IngestionMode": {
         "Type": "String",
         "Default": "direct",
@@ -601,6 +844,7 @@
         "Description": "Deployment stage label",
         "AllowedValues": [
           "dev",
+          "test",
           "prod"
         ],
         "Default": "prod"
@@ -665,28 +909,28 @@
         ],
         "Default": "true"
       },
-      "AuthPluginEnabled": {
+      "ContextPluginEnabled": {
         "Type": "String",
-        "Description": "Enable invocation of /opt/bin/event-auth from the customer Lambda Layer",
+        "Description": "Invoke the v2 Context Layer at /opt/bin/event-context",
+        "Default": "false",
         "AllowedValues": [
           "true",
           "false"
-        ],
-        "Default": "false"
+        ]
       },
-      "AuthPluginLayerArn": {
+      "ContextPluginLayerArn": {
         "Type": "String",
-        "Description": "Optional immutable ARN of customer-owned Lambda Layer version providing /opt/bin/event-auth (arm64)",
+        "Description": "Immutable ARM64 Context Layer version ARN providing /opt/bin/event-context",
         "Default": ""
       },
-      "AuthPluginPassClientMetadata": {
+      "ContextPluginPassClientMetadata": {
         "Type": "String",
-        "Description": "Pass ephemeral source_ip and coarse geo to /opt/bin/event-auth stdin for access policy evaluation",
+        "Description": "Pass ephemeral source IP and coarse geo to the Context Layer",
+        "Default": "false",
         "AllowedValues": [
           "true",
           "false"
-        ],
-        "Default": "false"
+        ]
       },
       "AllowedCorsOrigins": {
         "Type": "String",
@@ -732,9 +976,9 @@
       },
       "RetentionDays": {
         "Type": "Number",
-        "Description": "S3 lifecycle retention period in days for raw event objects",
-        "Default": 365,
-        "MinValue": 1,
+        "Description": "S3 raw event retention in days; 0 selects 7 for test or 365 for dev/prod",
+        "Default": 0,
+        "MinValue": 0,
         "MaxValue": 3650
       },
       "KmsKeyArn": {
@@ -744,8 +988,9 @@
       },
       "LogRetentionDays": {
         "Type": "Number",
-        "Description": "CloudWatch Logs retention in days for ingestion and Firehose logs",
+        "Description": "CloudWatch Logs retention; 0 selects 7 for test or 30 for dev/prod",
         "AllowedValues": [
+          0,
           7,
           14,
           30,
@@ -754,7 +999,7 @@
           180,
           365
         ],
-        "Default": 30
+        "Default": 0
       },
       "AlarmTopicArn": {
         "Type": "String",
@@ -794,6 +1039,27 @@
     "PARTITIONING_MODE": {
       "Ref": "PartitioningMode"
     },
+    "RATE_LIMIT_ENABLED": {
+      "Ref": "RateLimitEnabled"
+    },
+    "RATE_LIMIT_TABLE_NAME": {
+      "Fn::Sub": "${DeploymentId}-${Stage}-rate-limits"
+    },
+    "RATE_LIMIT_FAILURE_MODE": {
+      "Ref": "RateLimitFailureMode"
+    },
+    "RATE_LIMIT_USER_QUOTA": {
+      "Ref": "RateLimitUserQuota"
+    },
+    "RATE_LIMIT_TENANT_QUOTA": {
+      "Ref": "RateLimitTenantQuota"
+    },
+    "RATE_LIMIT_ANONYMOUS_QUOTA": {
+      "Ref": "RateLimitAnonymousQuota"
+    },
+    "RATE_LIMIT_TIERS": {
+      "Ref": "RateLimitTiers"
+    },
     "ALLOWED_NAMESPACES": {
       "Ref": "AllowedNamespaces"
     },
@@ -806,11 +1072,25 @@
     "ENFORCE_PLUGIN_NAMESPACE_AUTH": {
       "Ref": "EnforcePluginNamespaceAuth"
     },
-    "AUTH_PLUGIN_ENABLED": {
-      "Ref": "AuthPluginEnabled"
+    "CONTEXT_PLUGIN_ENABLED": {
+      "Fn::If": [
+        "UseContextPlugin",
+        "true",
+        {
+          "Ref": "AWS::NoValue"
+        }
+      ]
     },
-    "AUTH_PLUGIN_PASS_CLIENT_METADATA": {
-      "Ref": "AuthPluginPassClientMetadata"
+    "CONTEXT_PLUGIN_PASS_CLIENT_METADATA": {
+      "Fn::If": [
+        "UseContextPlugin",
+        {
+          "Ref": "ContextPluginPassClientMetadata"
+        },
+        {
+          "Ref": "AWS::NoValue"
+        }
+      ]
     },
     "ALLOWED_ORIGINS": {
       "Ref": "AllowedCorsOrigins"
@@ -990,6 +1270,100 @@
       "CL",
       "CO",
       "PE"
+    ]
+  },
+  "supportedRegions": [
+    {
+      "code": "us-east-1",
+      "location": "US East (N. Virginia)",
+      "core": true,
+      "defaultEnabled": true
+    },
+    {
+      "code": "us-west-2",
+      "location": "US West (Oregon)",
+      "core": true,
+      "defaultEnabled": false
+    },
+    {
+      "code": "eu-west-1",
+      "location": "Europe (Ireland)",
+      "core": true,
+      "defaultEnabled": false
+    },
+    {
+      "code": "eu-central-1",
+      "location": "Europe (Frankfurt)",
+      "core": true,
+      "defaultEnabled": false
+    },
+    {
+      "code": "ap-southeast-1",
+      "location": "Asia Pacific (Singapore)",
+      "core": true,
+      "defaultEnabled": false
+    },
+    {
+      "code": "ap-southeast-2",
+      "location": "Asia Pacific (Sydney)",
+      "core": false,
+      "defaultEnabled": false
+    },
+    {
+      "code": "ap-northeast-1",
+      "location": "Asia Pacific (Tokyo)",
+      "core": false,
+      "defaultEnabled": false
+    }
+  ],
+  "routingPolicy": {
+    "defaultMode": "nearest",
+    "defaultRegion": "us-east-1",
+    "selection": "great-circle distance across enabled origins",
+    "regionLocations": {
+      "us-east-1": [
+        38.95,
+        -77.45
+      ],
+      "us-east-2": [
+        39.96,
+        -82.99
+      ],
+      "us-west-1": [
+        37.35,
+        -121.96
+      ],
+      "us-west-2": [
+        45.6,
+        -122.68
+      ],
+      "eu-west-1": [
+        53.35,
+        -6.26
+      ],
+      "eu-central-1": [
+        50.11,
+        8.68
+      ],
+      "ap-southeast-1": [
+        1.35,
+        103.82
+      ],
+      "ap-southeast-2": [
+        -33.87,
+        151.21
+      ],
+      "ap-northeast-1": [
+        35.68,
+        139.69
+      ]
+    },
+    "coreRegions": [
+      "us-east-1",
+      "us-west-2",
+      "eu-west-1",
+      "eu-central-1",
+      "ap-southeast-1"
     ]
   }
 }

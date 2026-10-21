@@ -1,14 +1,13 @@
 [package]
-name = "event-auth-reference"
+name = "event-context-reference"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "event-auth"
+name = "event-context"
 path = "src/main.rs"
 
 [dependencies]
 eventing-contract = { path = "../eventing-contract" }
-serde.workspace = true
 serde_json.workspace = true

@@ -25,12 +25,16 @@ The CloudFormation **service role for the root stack** is selected in Marketplac
 
 1. Open your subscribed Eventing product in AWS Marketplace and choose **Set up your account / Configure and launch**. Quick Launch must be enabled for the product. If Configure and launch is unavailable, contact Bookcicle support before deployment.
 2. Choose the target AWS account. Launch the coordinated entry point in **US East (N. Virginia), us-east-1**. The package creates ingestion resources in the selected regions automatically; you do not switch consoles to create each regional stack.
-3. Enter a unique deployment ID, `dev` or `prod`, your first-party events hostname and an existing public Route53 hosted zone in the same account. Guided DNS setup requires that Route53 zone; external DNS is not supported by this guided launch.
-4. Select the EU, US and APAC regions you need. An empty group is disabled. Leave residency mode at `fail_closed` unless your policy explicitly permits fallback. Initially use a non-production account and synthetic events.
-5. Set exact browser origins, namespace policies, retention, concurrency and WAF controls. Optional KMS keys, alarm topics, auth layers and customer boundaries are specified for each region. Keep geographic enrichment and IP persistence decisions explicit.
+3. Enter a unique deployment ID, `dev`, `test` or `prod`, your first-party events hostname and an existing public Route53 hosted zone in the same account. Guided DNS setup requires that Route53 zone; external DNS is not supported by this guided launch.
+4. Start with the default `USRegion=us-east-1` and `ResidencyMode=nearest`. Enable additional regions only when needed; geographic selection updates automatically across enabled origins. `Additional1Region` and `Additional2Region` allow more than one origin in the same geography. Use `fail_closed` explicitly for legacy country-group residency policies. Initially use a non-production account and synthetic events.
+5. Set exact browser origins, namespace policies, retention, concurrency and WAF controls. Optional KMS keys, alarm topics, Context Layers and customer boundaries are specified for each region. Keep geographic enrichment and IP persistence decisions explicit.
 6. Choose the platform-approved IAM mode and root CloudFormation service role. In `preprovisioned` mode, use the platform-provided role/boundary configuration; the root and its children create no IAM roles or policies. Review the versioned template and resource changes. The shared template still declares conditional IAM resources, so the launch flow may require a named-IAM capability acknowledgement; this grants no permissions. If launch is not delegated, have your platform team complete the Marketplace launch.
 7. Authorize deployment and watch the **root stack** in CloudFormation. It coordinates regional ingestion, output resolution, the global WAF/TLS/router and final distribution-only origin authorization. No placeholder distribution or manual output transfer is required.
 8. Wait for root `CREATE_COMPLETE` or `UPDATE_COMPLETE`, then verify the deployment before connecting production traffic. DNS/certificate issuance and CloudFront propagation affect duration; there is no fixed 15-minute guarantee.
+
+## Test installations
+
+Use a separate root installation with `Stage=test`, a unique deployment ID and a test-specific first-party hostname. The default remains one us-east-1 origin. Zero-valued retention parameters resolve to seven days for test event objects and logs; explicit supported values override them. Set the SDK client’s `environment` to `test` and use this installation’s endpoint. Queue bindings reject cross-environment or cross-endpoint reuse. See [test environments](configuration.md#test-environments) for setup, queue upgrades and the synthetic S3 delivery check.
 
 ## Connect your application
 
@@ -43,9 +47,9 @@ Your events endpoint is derived from the hostname you declared:
 }
 ```
 
-Use `/secure` when authentication is required and an auth layer is configured. `/public` requires anonymous traffic; `/events` accepts either decision. Add the endpoint to your application's own environment configuration through its normal deployment pipeline. The root stack also exposes `EventsEndpoint` and `SecureEndpoint` for automatic bindings in your IaC system.
+Use `/secure` when authentication is required and a Context Layer verifies identity. `/public` requires anonymous traffic; `/events` accepts either decision. Add the endpoint to your application's own environment configuration through its normal deployment pipeline. The root stack also exposes `EventsEndpoint` and `SecureEndpoint` for automatic bindings in your IaC system.
 
-Send a small synthetic batch using the [Python, Rust or curl examples](runtime-examples.md). HTTP 202 confirms stream acceptance, not completed S3 delivery. Eventing provides buffered delivery with selective retries; end-to-end delivery and zero loss are not guaranteed. Retries are bounded, and timeouts or partial acceptance can lead to duplicates. Keep stable IDs and a durable producer queue when required. Confirm actual S3 arrival, view regional error/throttle/delivery metrics and edge logs, verify TLS and test direct-origin rejection. Root stack completion confirms provisioning, not a successful ingestion/delivery test. The metadata lookup resource does not read your event bucket or run data-plane smoke tests.
+Send a small synthetic batch using the [SDK examples](https://eventing.bookcicle.com/#guides-sdk). HTTP 202 confirms stream acceptance, not completed S3 delivery. Eventing provides buffered delivery with selective retries; end-to-end delivery and zero loss are not guaranteed. Retries are bounded, and timeouts or partial acceptance can lead to duplicates. Keep stable IDs and a durable producer queue when required. Confirm actual S3 arrival, view regional error/throttle/delivery metrics and edge logs, verify TLS and test direct-origin rejection. Root stack completion confirms provisioning, not a successful ingestion/delivery test. The metadata lookup resource does not read your event bucket or run data-plane smoke tests.
 
 ## Restricted accounts: platform-owned roles
 
@@ -85,24 +89,24 @@ Review these example desired-state inputs in Configure and launch. Marketplace s
   "EURegion": "eu-west-1",
   "USRegion": "us-east-1",
   "APACRegion": "",
-  "ResidencyMode": "fail_closed",
+  "ResidencyMode": "nearest",
   "AllowedCorsOrigins": "https://app.example.com",
   "LambdaReservedConcurrency": "100",
   "RetentionDays": "365"
 }
 ```
 
-Only regions present in the approved release are offered. This package currently supports selected standard commercial AWS regions in one account per installation. It does not enroll an organization or deploy to arbitrary external accounts. Use separate root installations and accounts for production and non-production.
+The configured catalog supports Northern Virginia (`us-east-1`), Oregon (`us-west-2`), Ireland (`eu-west-1`), Frankfurt (`eu-central-1`), Singapore (`ap-southeast-1`), Sydney (`ap-southeast-2`) and Tokyo (`ap-northeast-1`). Only regions present in your approved release are offered; enable up to five distinct origins, with us-east-1 enabled by default. Northern California and Ohio require a future catalog expansion. See [supported ingestion regions](configuration.md#supported-ingestion-regions). This package supports one standard commercial AWS account per installation. It does not enroll an organization or deploy to arbitrary external accounts. Use separate root installations and accounts for production and non-production.
 
 Do not adopt an existing independently deployed Eventing installation by creating another root with the same deployment ID. Review a migration/import plan first; the coordinated package creates and owns its own child stacks and authorization resources.
 
 ## Updates and removal
 
-Use the Marketplace offering’s approved update workflow to update the existing root stack, selecting the next approved immutable release and reviewing its change set. Do not update managed StackSets or child stacks independently. Settings are root parameters; regional auth layer/key/boundary ARNs should be bound from your application's infrastructure outputs automatically, rather than copied by an operator.
+Use the Marketplace offering’s approved update workflow to update the existing root stack, selecting the next approved immutable release and reviewing its change set. Do not update managed StackSets or child stacks independently. Settings are root parameters; regional Context Layer/key/boundary ARNs should be bound from your application's infrastructure outputs automatically, rather than copied by an operator.
 
 Treat deployment ID, stage and enabled-region changes as infrastructure migrations. Removing or replacing a regional stack retains its S3 bucket but does not migrate historical events or repoint downstream analytics automatically. Review old retained resources and their costs.
 
-Stop producers and drain Firehose buffers before removal; retention protects persisted objects, not unflushed deliveries. Deleting the root removes its managed infrastructure, while event buckets and their TLS-only bucket policies remain retained. Lambda@Edge functions and published versions are deliberately retained because replica cleanup is asynchronous; an administrator removes them after AWS finishes replication cleanup. Subscription cancellation and infrastructure removal are separate actions. Retained data/storage can continue incurring charges.
+Stop producers and drain SDK queues, any retained Kinesis stream and Firehose buffers before removal; retention protects persisted objects, not unflushed deliveries. Deleting the root removes its managed infrastructure, while event buckets and their TLS-only bucket policies remain retained. Lambda@Edge functions and published versions are deliberately retained because replica cleanup is asynchronous; an administrator removes them after AWS finishes replication cleanup. Subscription cancellation and infrastructure removal are separate actions. Retained data/storage can continue incurring charges.
 
 ## Public supporting project
 
@@ -110,7 +114,7 @@ The [eventing-examples repository](https://github.com/bookcicle/eventing-example
 
 ## Reference
 
-The [configuration guide](configuration.md) describes root settings and the underlying templates. The [permissions boundary guide](permissions-boundaries.md) explains runtime ceilings and customer policy ownership. Local auth development remains documented in the [auth-layer guide](auth-layer.md); its build/package commands are developer tasks, not the customer onboarding sequence.
+The [configuration guide](configuration.md) describes root settings and the underlying templates. The [permissions boundary guide](permissions-boundaries.md) explains runtime ceilings and customer policy ownership. Context Layer development is documented in the [Context Layer guide](auth-layer.md); its build/package commands are developer tasks, not the customer onboarding sequence.
 
 ## Capacity and recovery planning
 

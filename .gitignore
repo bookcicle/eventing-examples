@@ -4,3 +4,5 @@ __pycache__/
 crates/event-auth-jwt/tests/fixtures/*.der
 crates/event-auth-jwt/tests/fixtures/jwks.json
 .env
+
+node_modules/

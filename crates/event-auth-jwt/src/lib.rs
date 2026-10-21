@@ -2,6 +2,10 @@
 use eventing_contract::auth_contract::{
     AuthDecision, AuthPluginInput, AuthPluginOutput, AUTH_CONTRACT_VERSION,
 };
+use eventing_contract::context_types::{
+    AdmissionDecision, ContextAuthentication, ContextPluginInput, ContextPluginOutput,
+    CONTEXT_CONTRACT_VERSION,
+};
 use jsonwebtoken::jwk::{AlgorithmParameters, JwkSet, KeyAlgorithm, KeyOperations, PublicKeyUse};
 use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
 use serde::Deserialize;
@@ -21,6 +25,10 @@ pub struct Config {
 struct Claims {
     sub: String,
     tenant: String,
+    #[serde(default)]
+    rate_limit_tier: Option<String>,
+    #[serde(default)]
+    sid: Option<String>,
 }
 
 pub struct Verifier {
@@ -45,6 +53,16 @@ pub fn deny() -> AuthPluginOutput {
         allowed_namespaces: None,
     }
 }
+pub fn reject_context() -> ContextPluginOutput {
+    ContextPluginOutput {
+        contract_version: CONTEXT_CONTRACT_VERSION.into(),
+        decision: AdmissionDecision::Reject,
+        authentication: None,
+        request_context: Map::new(),
+        event_mutations: Vec::new(),
+    }
+}
+
 impl Verifier {
     pub fn load(path: &Path) -> Result<Self, &'static str> {
         let config_bytes = fs::read(path).map_err(|_| "config unreadable")?;
@@ -80,6 +98,34 @@ impl Verifier {
             return Err("invalid policy");
         }
         Ok(Self { config, keys })
+    }
+    /// Context Layer wire contract; event contents never supply verified identity.
+    pub fn evaluate_context(&self, input: &ContextPluginInput) -> ContextPluginOutput {
+        if input.request.contract_version != CONTEXT_CONTRACT_VERSION
+            || input.schema_version != "1"
+            || input.events.is_empty()
+            || input.request.batch.count != input.events.len()
+        {
+            return reject_context();
+        }
+        // Reuse the credential verifier, keeping its internal auth types off the wire.
+        let mut request = input.request.clone();
+        request.contract_version = AUTH_CONTRACT_VERSION.into();
+        let verified = self.evaluate(&request);
+        if verified.decision == AuthDecision::Deny {
+            return reject_context();
+        }
+        ContextPluginOutput {
+            contract_version: CONTEXT_CONTRACT_VERSION.into(),
+            decision: AdmissionDecision::Accept,
+            authentication: Some(ContextAuthentication {
+                decision: verified.decision,
+                context: verified.context,
+                allowed_namespaces: verified.allowed_namespaces,
+            }),
+            request_context: Map::new(),
+            event_mutations: Vec::new(),
+        }
     }
     pub fn evaluate(&self, input: &AuthPluginInput) -> AuthPluginOutput {
         self.authenticate(input).unwrap_or_else(deny)
@@ -165,6 +211,18 @@ impl Verifier {
         let mut context = Map::new();
         context.insert("subject".into(), json!(claims.sub));
         context.insert("tenant".into(), json!(claims.tenant));
+        if let Some(sid) = claims.sid {
+            if !valid_text(&sid) {
+                return None;
+            }
+            context.insert("session_id".into(), json!(sid));
+        }
+        if let Some(tier) = claims.rate_limit_tier {
+            if !valid_text(&tier) {
+                return None;
+            }
+            context.insert("rate_limit_tier".into(), json!(tier));
+        }
         Some(AuthPluginOutput {
             contract_version: AUTH_CONTRACT_VERSION.into(),
             decision: AuthDecision::Authenticated,
