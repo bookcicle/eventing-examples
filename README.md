@@ -16,6 +16,8 @@ Deploy the service using the version-pinned release supplied through your subscr
 Requires Rust, Python 3, Node.js, OpenSSL, Bash, curl and sha256sum. No AWS account is required for local tests.
 
 ```bash
+cargo install cargo-audit
+cargo audit
 python3 scripts/generate-test-keys.py
 cargo test --locked --workspace
 cargo build --locked --workspace
