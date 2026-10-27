@@ -12,6 +12,10 @@ jobs:
       - uses: actions/setup-node@v6
         with: {node-version: "24"}
       - uses: dtolnay/rust-toolchain@1.96.0
+      - name: Audit Rust dependencies
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit
       - run: python3 scripts/generate-test-keys.py
       - run: cargo test --locked --workspace
       - run: cargo build --locked --workspace
